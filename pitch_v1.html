@@ -1,676 +1,553 @@
 <!DOCTYPE html>
 <style>
+    :root {
+        --primary-accent-light: #007aff;
+        --secondary-accent-light: #3395ff;
+        --page-bg-light: linear-gradient(to right top, #f8f9fa, #e9ecef);
+        --card-bg-light: rgba(255, 255, 255, 0.9);
+        --text-primary-light: #212529;
+        --text-secondary-light: #6c757d;
+        --border-color-light: #dee2e6;
+        --input-bg-light: #f8f9fa;
+        --divider-color-light: #e9ecef;
+        --zone-stroke-light: #ffffff;
+        --tooltip-bg-light: rgba(255, 252, 252, 0.85);
+        --tooltip-text-light: #030303;
 
-div.tooltip {
-  position: absolute;
-  text-align: center;
-  width: 90px;
-  height: 20px;
-  padding: 2px;
-  font: 6px sans-serif;
-  background: #CCC5C5;
-  border: 0px;
-  border-radius: 8px;
-}
 
-rect.selected {
-  fill: #00ff00 !important;
-}
+        --primary-accent-dark: #4dabf7;
+        --secondary-accent-dark: #74c0fc;
+        --page-bg-dark: linear-gradient(to right top, #0c1a2e, #1a2b4b);
+        --card-bg-dark: rgba(26, 43, 75, 0.85);
+        --text-primary-dark: #e9ecef;
+        --text-secondary-dark: #adb5bd;
+        --border-color-dark: #343a40;
+        --input-bg-dark: #1f3558;
+        --divider-color-dark: #343a40;
+        --zone-stroke-dark: #a0a0a0;
+        --tooltip-bg-dark: #d0d0d0;
+        --tooltip-text-dark: #121212;
 
-body.scaled {
-  transform: scale(1.75);
-  transform-origin: 0 0;
-}
+
+        --hit-color: #39ff14;
+        --out-color: #ff0000;
+        --strike-color: rgb(233, 252, 63);
+        --ball-color: hsl(187, 100%, 50%);
+    }
+    body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        margin: 0;
+        padding: 20px;
+        transition: background-color 0.3s, color 0.3s;
+    }
+    body.light-mode {
+        background: var(--page-bg-light);
+        color: var(--text-primary-light);
+    }
+    body.dark-mode {
+        background: var(--page-bg-dark);
+        color: var(--text-primary-dark);
+    }
+    .main-container {
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        gap: 40px;
+        padding: 20px;
+        max-width: 2000px;
+        margin: auto;
+    }
+    .controls {
+        width: 450px;
+        flex-shrink: 0;
+        border: 1px solid;
+        padding: 30px;
+        border-radius: 16px;
+        box-shadow: 0 12px 28px rgba(0,0,0,0.07);
+        transition: background-color 0.3s, border-color 0.3s;
+        backdrop-filter: blur(10px);
+    }
+     body.light-mode .controls {
+        background: var(--card-bg-light);
+        border-color: var(--border-color-light);
+    }
+    body.dark-mode .controls {
+        background: var(--card-bg-dark);
+        border-color: var(--border-color-dark);
+    }
+    .visualization-container {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+
+    h3 {
+        text-align: center;
+        margin-top: 0;
+        margin-bottom: 30px;
+        font-size: 1.8em;
+        font-weight: 700;
+    }
+    body.light-mode h3 { color: #000000; }
+    body.dark-mode h3 { color: var(--text-primary-dark); }
+
+
+    .theme-switcher {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        display: flex;
+        align-items: center;
+    }
+    .theme-switcher span { margin-left: 8px; }
+    .switch { position: relative; display: inline-block; width: 60px; height: 34px; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; }
+    .slider:before { position: absolute; content: ""; height: 26px; width: 26px; left: 4px; bottom: 4px; background-color: white; transition: .4s; }
+    input:checked + .slider { background-color: var(--primary-accent-dark); }
+    input:focus + .slider { box-shadow: 0 0 1px var(--primary-accent-dark); }
+    input:checked + .slider:before { transform: translateX(26px); }
+    .slider.round { border-radius: 34px; }
+    .slider.round:before { border-radius: 50%; }
+
+
+    .input-group { margin-bottom: 22px; }
+    .input-group label {
+        font-weight: 500;
+        display: block;
+        margin-bottom: 10px;
+        font-size: 1em; /* Increased base font size */
+        transition: color 0.3s;
+    }
+     body.light-mode .input-group label { color: var(--text-secondary-light); }
+     body.dark-mode .input-group label { color: var(--text-secondary-dark); }
+
+
+    .input-group select, .input-group input[type="number"] {
+        width: 100%;
+        padding: 12px;
+        box-sizing: border-box;
+        border: 1px solid;
+        border-radius: 8px;
+        font-size: 1em;
+        transition: background-color 0.3s, border-color 0.3s, color 0.3s;
+    }
+    body.light-mode .input-group select, body.light-mode .input-group input[type="number"] {
+        background-color: var(--input-bg-light);
+        border-color: var(--border-color-light);
+        color: var(--text-primary-light);
+    }
+    body.dark-mode .input-group select, body.dark-mode .input-group input[type="number"] {
+        background-color: var(--input-bg-dark);
+        border-color: var(--border-color-dark);
+        color: var(--text-primary-dark);
+    }
+    .input-group .count-container { display: flex; gap: 15px; align-items: center; }
+    .input-group .count-container > div { flex: 1; }
+    .input-group input[type="range"] { width: 65%; vertical-align: middle; }
+    .input-group output { font-size: 1em; font-weight: 500; vertical-align: middle; margin-left: 10px; } /* Increased output font size */
+    body.light-mode .input-group output { color: #0d0d0d; }
+    body.dark-mode .input-group output { color: var(--text-secondary-dark); }
+
+
+    #predictButton {
+        width: 100%;
+        padding: 14px;
+        font-size: 1.2em;
+        font-weight: bold;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background-color 0.2s, transform 0.1s;
+        margin-top: 10px;
+    }
+    body.light-mode #predictButton { background-color: var(--primary-accent-light); }
+    body.dark-mode #predictButton { background-color: var(--primary-accent-dark); }
+    body.light-mode #predictButton:hover { background-color: var(--secondary-accent-light); transform: translateY(-2px); }
+    body.dark-mode #predictButton:hover { background-color: var(--secondary-accent-dark); transform: translateY(-2px); }
+
+
+    #hitProbability {
+        font-size: 1.4em;
+        font-weight: 600;
+        margin-top: 25px;
+        text-align: center;
+        transition: color 0.3s;
+    }
+     body.light-mode #hitProbability { color: var(--text-primary-light); }
+     body.dark-mode #hitProbability { color: var(--text-primary-dark); }
+
+
+    hr {
+        border: none;
+        height: 1px;
+        transition: background-color 0.3s;
+    }
+    body.light-mode hr { background-color: var(--divider-color-light); margin: 25px 0; }
+    body.dark-mode hr { background-color: var(--divider-color-dark); margin: 25px 0; }
+
+
+    details > summary { cursor: pointer; font-weight: 500; padding: 5px; font-size: 1.1em; }
+    body.light-mode details > summary { color: var(--text-secondary-light); }
+    body.dark-mode details > summary { color: var(--text-secondary-dark); }
+
+
+    #moreDetails .input-group label { font-size: 1.1em; font-weight: 600; } /* Bolder, larger labels */
+    #moreDetails .input-group output { font-size: 1.05em; font-weight: 500; } /* Larger output text */
+
+
+    #my_dataviz_container {
+        border: 1px solid;
+        border-radius: 12px;
+        padding: 15px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+        transition: background-color 0.3s, border-color 0.3s;
+        backdrop-filter: blur(10px);
+    }
+     body.light-mode #my_dataviz_container { background: var(--card-bg-light); border-color: var(--border-color-light); }
+     body.dark-mode #my_dataviz_container { background: var(--card-bg-dark); border-color: var(--border-color-dark); }
+
+
+    rect.heatmap_zone {
+        stroke-width: 2px;
+        cursor: pointer;
+        transition: stroke 0.3s;
+    }
+     body.light-mode rect.heatmap_zone { stroke: var(--zone-stroke-light); }
+     body.dark-mode rect.heatmap_zone { stroke: var(--zone-stroke-dark); }
+
+
+    rect.selected { stroke: limegreen !important; stroke-width: 5px !important; }
+
+
+    .pitch-dot {
+        transition: r 0.3s;
+        filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.7));
+    }
+
+
+    div.tooltip {
+        position: absolute;
+        text-align: left;
+        padding: 15px; /* Increased padding */
+        font: 16px sans-serif; /* Increased font size */
+        border-radius: 8px;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.2s, background-color 0.3s, color 0.3s;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    body.light-mode div.tooltip {
+        background: var(--tooltip-bg-light);
+        color: var(--tooltip-text-light);
+    }
+    body.dark-mode div.tooltip {
+        background: var(--tooltip-bg-dark);
+        color: var(--tooltip-text-dark);
+    }
+
+
+    #outcome-legend {
+        padding: 20px;
+        border-radius: 12px;
+        border: 1px solid;
+        transition: background-color 0.3s, border-color 0.3s;
+        backdrop-filter: blur(10px);
+    }
+    body.light-mode #outcome-legend { background: var(--card-bg-light); border-color: var(--border-color-light); }
+    body.dark-mode #outcome-legend { background: var(--card-bg-dark); border-color: var(--border-color-dark); }
+    #outcome-legend h4 { margin-top: 0; margin-bottom: 15px; text-align: center; font-size: 1.2em; }
+     body.light-mode #outcome-legend h4 { color: var(--text-primary-light); }
+     body.dark-mode #outcome-legend h4 { color: var(--text-primary-dark); }
+
+
+    .legend-item { display: inline-flex; align-items: center; margin: 5px 10px; cursor: pointer; font-size: 0.95em; }
+     body.light-mode .legend-item { color: var(--text-secondary-light); }
+     body.dark-mode .legend-item { color: var(--text-secondary-dark); }
+    .swatch { display: inline-block; width: 14px; height: 14px; border-radius: 50%; margin-right: 8px; border: 1px solid #777; }
+    .swatch.hit { background-color: var(--hit-color); }
+    .swatch.out { background-color: var(--out-color); }
+    .swatch.strike { background-color: var(--strike-color); }
+    .swatch.ball { background-color: var(--ball-color); }
+    .master-toggle { font-weight: 600; display: block; text-align: center; margin-bottom: 10px; }
+     body.light-mode .master-toggle { color: var(--text-primary-light); }
+     body.dark-mode .master-toggle { color: var(--text-primary-dark); }
 </style>
-
-
 <head>
-  <title>Pitch Tool</title>
+  <title>Mapping Heat</title>
   <meta charset="utf-8">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://d3js.org/d3.v5.js"></script>
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 </head>
+<body class="light-mode">
 
-<body>
+<div class="theme-switcher">
+    <label class="switch">
+        <input type="checkbox" id="theme-toggle">
+        <span class="slider round"></span>
+    </label>
+    <span>Dark Mode</span>
+</div>
 
-<h3>Mapping Heat</h1>
-<select id="selectPitcher"></select>
-<select id="selectType"></select>
-<input type="range" min="55", max="110", step="1", value="90" id="selectSpeed"/>
-<output id="opacity">90 mph</output>
-<div id="my_dataviz"></div>
-<div id="legend"></div>
-<div id="hitProbability" style="max-width: 100px; margin-top:25px; margin-left: 20px;"></div>
+<div class="main-container">
+    <div class="controls">
+        <h3>Mapping Heat</h3>
+        <div class="input-group"><label for="selectPitcher">Pitcher:</label><select id="selectPitcher"></select></div>
+        <div class="input-group"><label for="selectPitchType">Pitch Type:</label><select id="selectPitchType"></select></div>
+        <div class="input-group"><label for="selectStand">Batter Stance:</label><select id="selectStand"><option value="R">R</option><option value="L">L</option></select></div>
+        <div class="input-group"><label for="selectPThrows">Pitcher Throws:</label><select id="selectPThrows" disabled><option value="R">R</option><option value="L">L</option></select></div>
+        <div class="input-group"><label for="valReleaseSpeed">Release Speed:</label><input type="range" min="60" max="105" step="0.1" value="92.0" id="valReleaseSpeed"/><output>92.0 mph</output></div>
+        <hr/>
+        <div class="input-group">
+            <label>Count & Situation</label>
+            <div class="count-container">
+                <div><select id="valBalls"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select> <span>Balls</span></div>
+                <div><select id="valStrikes"><option value="0">0</option><option value="1">1</option><option value="2">2</option></select> <span>Strikes</span></div>
+                <div><select id="valOuts"><option value="0">0</option><option value="1">1</option><option value="2">2</option></select> <span>Outs</span></div>
+            </div>
+        </div>
+        <div class="input-group"><label for="checkOn1b">Runners:</label><div class="runners-container"><input type="checkbox" id="checkOn1b"> 1B <input type="checkbox" id="checkOn2b"> 2B <input type="checkbox" id="checkOn3b"> 3B</div></div>
+        <hr/>
+        <button id="predictButton">Update Heatmap</button>
+        <div id="hitProbability">Click a zone for its probability</div>
+        <details id="moreDetails" open> <summary>More Pitch Features...</summary>
+            <div class="input-group"><label for="valEffectiveSpeed">Effective Speed:</label><input type="range" min="60" max="105" step="0.1" value="92.0" id="valEffectiveSpeed"/><output>92.0 mph</output></div>
+            <div class="input-group"><label for="valReleaseSpinRate">Spin Rate:</label><input type="range" min="1000" max="3500" step="10" value="2200" id="valReleaseSpinRate"/><output>2200 rpm</output></div>
+            <div class="input-group"><label for="valReleaseExtension">Extension:</label><input type="range" min="4.0" max="8.0" step="0.1" value="6.0" id="valReleaseExtension"/><output>6.0 ft</output></div>
+            <div class="input-group"><label for="valPfxX">Horiz. Break:</label><input type="range" min="-2.5" max="2.5" step="0.01" value="0.0" id="valPfxX"/><output>0.00 ft</output></div>
+            <div class="input-group"><label for="valPfxZ">Vert. Break:</label><input type="range" min="-2.5" max="2.5" step="0.01" value="1.0" id="valPfxZ"/><output>1.00 ft</output></div>
+            <div class="input-group"><label for="valSpinAxis">Spin Axis:</label><input type="range" min="0" max="360" step="1" value="215" id="valSpinAxis"/><output>215 °</output></div>
+            <div class="input-group"><label for="valReleasePosX">Release Pos X:</label><input type="range" min="-4.0" max="4.0" step="0.01" value="-1.8" id="valReleasePosX"/><output>-1.80 ft</output></div>
+            <div class="input-group"><label for="valReleasePosZ">Release Pos Z:</label><input type="range" min="4.0" max="7.0" step="0.01" value="5.9" id="valReleasePosZ"/><output>5.90 ft</output></div>
+            <div class="input-group"><label for="valArmAngle">Arm Angle:</label><input type="range" min="-90" max="90" step="1" value="25.0" id="valArmAngle"/><output>25.0 °</output></div>
+            <div class="input-group"><label for="valInning">Inning:</label><input type="number" id="valInning" min="1" max="20" value="1" step="1"></div>
+            <div class="input-group"><label for="valSzTop">Strike Zone Top:</label><input type="range" min="2.5" max="4.5" step="0.01" value="3.5" id="valSzTop"/><output>3.50 ft</output></div>
+            <div class="input-group"><label for="valSzBot">Strike Zone Bottom:</label><input type="range" min="1.0" max="2.5" step="0.01" value="1.6" id="valSzBot"/><output>1.60 ft</output></div>
+            <div class="input-group"><label for="valNThruorderPitcher">Times Thru Order:</label><input type="number" id="valNThruorderPitcher" min="1" max="5" value="1" step="1"></div>
+        </details>
+    </div>
+    <div class="visualization-container">
+        <div id="my_dataviz_container"></div>
+        <div id="outcome-legend">
+            <h4>Pitch Outcomes</h4>
+            <div class="legend-item master-toggle">
+              <label><input type="checkbox" id="toggleDotColors" checked> Color Code Outcomes</label>
+            </div>
+            <hr style="width: 80%;">
+            <div class="legend-filters">
+              <label class="legend-item"><input type="checkbox" class="outcome-filter" value="Hit" checked> <span class="swatch hit"></span> Hit</label>
+              <label class="legend-item"><input type="checkbox" class="outcome-filter" value="Out" checked> <span class="swatch out"></span> Out</label>
+              <label class="legend-item"><input type="checkbox" class="outcome-filter" value="Strike" checked> <span class="swatch strike"></span> Strike</label>
+              <label class="legend-item"><input type="checkbox" class="outcome-filter" value="Ball" checked> <span class="swatch ball"></span> Ball</label>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
+var margin = {top: 20, right: 20, bottom: 20, left: 20},
+    width = 1200 - margin.left - margin.right,
+    height = 1200 - margin.top - margin.bottom;
 
-// Scale viz
-var scale = 1.75
-d3.select('body').attr('class', 'scaled')
-
-// SETTING SVG and Canvas DIMENSIONS
-// set the dimensions and margins of the graph
-var margin = {top: 10, right: 30, bottom: 30, left: 60},
-    width = 460 - margin.left - margin.right,
-    height = 400 - margin.top - margin.bottom;
-
-// append the svg object to the body of the page
 var svg;
-function initSvg () {
-  var svg = d3.select("#my_dataviz")
-    .append("svg")
-    .attr("width", width + margin.left + margin.right)
-    .attr("height", height + margin.top + margin.bottom)
-    .append("g")
-    .attr("transform",
-      "translate(" + margin.left + "," + margin.top + ")");
-  return svg
+var baseApiUrl = 'http://127.0.0.1:5000';
+var currentPitchingData = [];
+var curZoneProbs = {};
+var tooltip = d3.select("body").append("div").attr("class", "tooltip");
+var outcomeColorScale = d3.scaleOrdinal()
+    .domain(['Hit', 'Out', 'Strike', 'Ball', 'Other'])
+    .range(['var(--hit-color)', 'var(--out-color)', 'var(--strike-color)', 'var(--ball-color)', '#cccccc']);
+
+function getOutcomeCategory(d) {
+    const hitEvents = ['single', 'double', 'triple', 'home_run'];
+    const outEvents = ['field_out', 'force_out', 'grounded_into_double_play', 'sac_fly', 'fielders_choice_out', 'sac_bunt', 'field_error'];
+    if (hitEvents.includes(d.events)) return 'Hit';
+    if (outEvents.includes(d.events) || (d.type === 'X' && !hitEvents.includes(d.events))) return 'Out';
+    if (d.type === 'S') return 'Strike';
+    if (d.type === 'B') return 'Ball';
+    return 'Other';
 }
 
-var div = d3.select("body").append("div")
-  .attr("class", "tooltip")
-  .style("opacity", 0);
-
-// Speed selector
-d3.select("input[type=range]#selectSpeed").on("input", function() {
-  var speed = this.value;
-  d3.select("output#opacity").text(d3.format(".0f")(speed) + " mph");
-  return d3.selectAll("circle.points").attr("opacity", speed);
-});
-
-
-
-
-// CODE TO GO GET DATA
-var baseApiUrl = 'http://localhost:5000'
-
-// get pitcher data
-function getPitcherData (pitcher) {
-  return $.get({
-    url: baseApiUrl +'/stats/pitcher?name=' + encodeURIComponent(pitcher),
-    dataType: 'json',
-    success: function (pitcherData) {
-      return pitcherData.responseJson
-    },
-    error: function (error) {
-      console.error('Error loading pitcher data', error)
+function updateVisuals(updateDefaults = false) {
+    if (updateDefaults && currentPitchingData.length > 0) {
+        updateSliderDefaults(currentPitchingData);
     }
-  })
+    
+    let rawInputData = {
+        player_name: $('#selectPitcher').val(), pitch_type: $('#selectPitchType').val(),
+        stand: $('#selectStand').val(), p_throws: $('#selectPThrows').val(),
+        release_speed: $('#valReleaseSpeed').val(), balls: $('#valBalls').val(),
+        strikes: $('#valStrikes').val(), outs_when_up: $('#valOuts').val(),
+        on_1b: $('#checkOn1b').is(":checked") ? 1 : 0, on_2b: $('#checkOn2b').is(":checked") ? 1 : 0, on_3b: $('#checkOn3b').is(":checked") ? 1 : 0,
+        effective_speed: $('#valEffectiveSpeed').val(), release_spin_rate: $('#valReleaseSpinRate').val(),
+        release_extension: $('#valReleaseExtension').val(), pfx_x: $('#valPfxX').val(), pfx_z: $('#valPfxZ').val(),
+        spin_axis: $('#valSpinAxis').val(), release_pos_x: $('#valReleasePosX').val(), release_pos_z: $('#valReleasePosZ').val(),
+        arm_angle: $('#valArmAngle').val(), inning: $('#valInning').val(), sz_top: $('#valSzTop').val(),
+        sz_bot: $('#valSzBot').val(), n_thruorder_pitcher: $('#valNThruorderPitcher').val()
+    };
+
+    $.ajax({
+        url: `${baseApiUrl}/stats/predict`, type: 'POST', contentType: 'application/json',
+        data: JSON.stringify(rawInputData), dataType: 'json',
+        success: (zoneProbs) => {
+            curZoneProbs = zoneProbs;
+            drawChartElements(currentPitchingData, zoneProbs);
+        },
+        error: (error) => console.error('Prediction API Error:', error)
+    });
 }
 
+function drawChartElements(pitchingData, zoneProbs) {
+    const probabilityValues = Object.values(zoneProbs).filter(v => v !== null && v >= 0);
+    const maxProb = d3.max(probabilityValues);
+    const minProb = d3.min(probabilityValues);
+    
+    let myColor = d3.scaleSequential(d3.interpolateRdYlBu).domain([maxProb || 0.4, minProb || 0.1]);
+    
+    svg = d3.select("#my_dataviz_container").html('').append("svg")
+      .attr("width", width + margin.left + margin.right).attr("height", height + margin.top + margin.bottom)
+      .append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+    
+    let x = d3.scaleLinear().domain([-2.5, 2.5]).range([0, width]);
+    let y = d3.scaleLinear().domain([0, 5]).range([height, 0]);
+    let sz = {l: -0.83, r: 0.83, t: 3.5, b: 1.5};
+    let h_third = (sz.r - sz.l) / 3, v_third = (sz.t - sz.b) / 3;
 
-// get pitch type
-function getPitchTypeData (pitcher, pitch) {
-  return $.get({
-    url: baseApiUrl + '/stats/pitcher/pitch?name=' + encodeURIComponent(pitcher)
-      + '&pitch=' + encodeURIComponent(pitch),
-    dataType: 'json',
-    success: function (pitchData) {
-      return pitchData
-    },
-    error: function (error) {
-      console.error('Error loading pitch type data', error)
+    const zoneGeometries = [
+        { zone: '14', x: sz.l - h_third, y: sz.t + v_third, w: h_third * 5, h: v_third }, { zone: '13', x: sz.l - h_third, y: sz.b, w: h_third * 5, h: v_third },
+        { zone: '11', x: sz.l - h_third, y: sz.t, w: h_third, h: v_third * 3 }, { zone: '12', x: sz.r, y: sz.t, w: h_third, h: v_third * 3 },
+        { zone: '1', x: sz.l, y: sz.t, w: h_third, h: v_third }, { zone: '2', x: sz.l + h_third, y: sz.t, w: h_third, h: v_third }, { zone: '3', x: sz.l + 2 * h_third, y: sz.t, w: h_third, h: v_third },
+        { zone: '4', x: sz.l, y: sz.t - v_third, w: h_third, h: v_third }, { zone: '5', x: sz.l + h_third, y: sz.t - v_third, w: h_third, h: v_third }, { zone: '6', x: sz.l + 2 * h_third, y: sz.t - v_third, w: h_third, h: v_third },
+        { zone: '7', x: sz.l, y: sz.t - 2 * v_third, w: h_third, h: v_third }, { zone: '8', x: sz.l + h_third, y: sz.t - 2 * v_third, w: h_third, h: v_third }, { zone: '9', x: sz.l + 2 * h_third, y: sz.t - 2 * v_third, w: h_third, h: v_third }
+    ];
+
+    svg.selectAll(".heatmap_zone").data(zoneGeometries).enter().append("rect")
+      .attr("class", "heatmap_zone").attr("zone", d => d.zone)
+      .attr("x", d => x(d.x)).attr("y", d => y(d.y))
+      .attr("width", d => x(d.x + d.w) - x(d.x)).attr("height", d => y(d.y - d.h) - y(d.y))
+      .style("fill", d => myColor(zoneProbs[d.zone] || 0))
+      .on('click', function(d) {
+          d3.selectAll('.heatmap_zone').classed('selected', false);
+          d3.select(this).classed('selected', true);
+          let prob = curZoneProbs[d.zone];
+          if (prob !== undefined) $('#hitProbability').text(`Hit Prob. for Zone ${d.zone}: ${(prob*100).toFixed(2)}%`);
+      });
+
+    if (pitchingData && pitchingData.length > 0) {
+        let selectedPitchType = $('#selectPitchType').val();
+        svg.append('g').selectAll(".pitch-dot").data(pitchingData.filter(p=>p.pitch_type === selectedPitchType && p.plate_x != null))
+            .enter().append("circle").attr("class", d => `pitch-dot outcome-${getOutcomeCategory(d)}`)
+            .attr("cx", d=>x(d.plate_x)).attr("cy", d=>y(d.plate_z))
+            .attr("r", 6).style("fill", d => outcomeColorScale(getOutcomeCategory(d)))
+            .style('stroke', "rgba(0,0,0,0.7)").style('stroke-width', 1.5)
+            .on("mouseover", function(d) {
+                tooltip.transition().duration(200).style("opacity", 1);
+                tooltip.html(`<b>${d.events || d.description || 'N/A'}</b><br/>${d.release_speed.toFixed(1)} mph`)
+                    .style("left", (d3.event.pageX + 15) + "px").style("top", (d3.event.pageY - 15) + "px");
+            })
+            .on("mouseout", function() {
+                tooltip.transition().duration(500).style("opacity", 0);
+            });
     }
-  })
+    filterPitchDots();
 }
 
-// get pitch feature
-function getPitchFeatureData (pitcher, feature, value) {
-  return $.get({
-    url: baseApiUrl + '/stats/pitcher?name=' + encodeURIComponent(pitcher)
-      + '&feature=' + encodeURIComponent(feature) + '&value=' + encodeURIComponent(value),
-    dataType: 'json',
-    success: function (pitchData) {
-      return pitchData
-    },
-    error: function (error) {
-      console.error('Error loading pitch type data', error)
+function setPitchTypes(pitchingData) {
+    let pitchTypes = [...new Set(pitchingData.map(item => item.pitch_type))].filter(Boolean).sort();
+    let select = $('#selectPitchType');
+    let currentVal = select.val();
+    select.empty();
+    $.each(pitchTypes, (i, pt) => { if (pt) select.append(new Option(pt, pt)); });
+    if(pitchTypes.includes(currentVal)) {
+        select.val(currentVal);
+    } else if (pitchTypes.length > 0) {
+        select.val(pitchTypes[0]);
     }
-  })
 }
 
-// get pitcher names
-function getPitcherNames () {
-  return $.get({
-    url: baseApiUrl + '/stats/pitchers/names',
-    dataType: 'json',
-    success: function (pitcherNames) {
-      return pitcherNames
-    },
-    error: function (error) {
-      console.error('Error loading pitcher names', error)
+function updateSliderDefaults(pitchingData) {
+    let selectedPitchType = $('#selectPitchType').val();
+    let pitchesOfType = pitchingData.filter(p => p.pitch_type === selectedPitchType);
+    if (pitchesOfType.length === 0) pitchesOfType = pitchingData;
+    if (pitchesOfType.length === 0) return;
+
+    const slidersToUpdate = { 'valReleaseSpeed':'release_speed', 'valEffectiveSpeed':'effective_speed', 'valReleaseSpinRate':'release_spin_rate', 'valReleaseExtension':'release_extension', 'valPfxX':'pfx_x', 'valPfxZ':'pfx_z', 'valSpinAxis':'spin_axis', 'valReleasePosX':'release_pos_x', 'valReleasePosZ':'release_pos_z', 'valArmAngle':'arm_angle', 'valSzTop':'sz_top', 'valSzBot':'sz_bot' };
+    for (const [sliderId, dataKey] of Object.entries(slidersToUpdate)) {
+        let avg = d3.mean(pitchesOfType, d => d[dataKey]);
+        if (avg !== undefined && !isNaN(avg)) $('#' + sliderId).val(avg);
     }
-  })
+    updateAllSliderOutputs();
 }
 
-// get zone probabalities
-function getZoneProbabilities (pitcher, pitch, speed) {
-  var qs = '?name=' + pitcher + "&pitch=" + pitch + "&speed=" + speed
-  return $.get({
-    url: baseApiUrl + '/stats/predict' + encodeURI(qs),
-    dataType: 'json',
-    success: function (zoneProbs) {
-      return zoneProbs
-    },
-    error: function (error) {
-      console.error('Error generating zone probabilities', error)
-    }
-  })
+function updateAllSliderOutputs() {
+    $('.controls input[type="range"]').each(function() {
+        let el = $(this), output = el.next('output'), unit = output.text().split(' ')[1] || '';
+        let precision = (el.attr('id').includes("Plate") || el.attr('id').includes("Pos") || el.attr('id').includes("Extension")) ? 2 : 1;
+        output.text(parseFloat(el.val()).toFixed(precision) + " " + unit);
+    });
 }
-// End code to go get data
 
-
-// define color Map
-endColor = 0
-startColor = .2
-var myColor = d3.scaleSequential()
-  .interpolator(d3.interpolateRdYlBu)
-  .domain([startColor,endColor])
-
-// add the legend now
-continuous("#my_dataviz", myColor);
-
-// create continuous color legend
-function continuous(selector_id, colorscale) {
-  var legendheight = 200,
-      legendwidth = 80,
-      margin = {top: 10, right: 60, bottom: 10, left: 2};
-
-  var canvas = d3.select(selector_id)
-    .style("height", legendheight + "px")
-    .style("width", legendwidth + "px")
-    .style("position", "relative")
-    .append("canvas")
-    .attr("height", legendheight - margin.top - margin.bottom)
-    .attr("width", 1)
-    .style("height", (legendheight - margin.top - margin.bottom) + "px")
-    .style("width", (legendwidth - margin.left - margin.right) + "px")
-    .style("border", "1px solid #000")
-    .style("position", "absolute")
-    .style("top", (margin.top) + "px")
-    .style("left", (margin.left) + "px")
-    .node();
-
-  var ctx = canvas.getContext("2d");
-
-  var legendscale = d3.scaleLinear()
-    .range([1, legendheight - margin.top - margin.bottom])
-    .domain(colorscale.domain());
-
-  var image = ctx.createImageData(1, legendheight);
-  d3.range(legendheight).forEach(function(i) {
-    var c = d3.rgb(colorscale(legendscale.invert(i)));
-    image.data[4*i] = c.r;
-    image.data[4*i + 1] = c.g;
-    image.data[4*i + 2] = c.b;
-    image.data[4*i + 3] = 255;
-  });
-  ctx.putImageData(image, 0, 0);
-
-  var legendaxis = d3.axisRight()
-    .scale(legendscale)
-    .tickSize(6)
-    .ticks(8);
-
-  var legSvg = d3.select(selector_id)
-    .append("svg")
-    .attr("height", (legendheight) + "px")
-    .attr("width", (legendwidth) + "px")
-    .style("position", "absolute")
-    .style("left", "0px")
-    .style("top", "0px")
-
-  legSvg.append("g")
-    .attr("class", "axis")
-    .attr("transform", "translate(" + (legendwidth - margin.left - margin.right + 3) + "," + (margin.top) + ")")
-    .call(legendaxis);
-};
-
-// function to draw strike zone
-var init = true;
-var x, y;
-var curZoneProbs;
-function drawStrikeZone (pitchingData, pitchType, zoneProbs) {
-  if(svg) {
-    d3.selectAll('svg').remove();
-  }
-  continuous("#my_dataviz", myColor)
-  svg = initSvg()
-
-  if (init) {
-    x = d3.scaleLinear()
-    .domain([d3.min(pitchingData, function(c) { return c.plate_x}) - 3,
-      d3.max(pitchingData, function(c) { return c.plate_x})])
-    .range([ 0, width ])
-
-    y = d3.scaleLinear()
-    .domain([d3.min(pitchingData, function(c) { return c.plate_z}),
-      d3.max(pitchingData, function(c) { return c.plate_z})])
-    .range([ height, 0])
-
-    init = false
-  }
-  curZoneProbs = zoneProbs
-
-  // PAINT STRIKE ZONE
-
-  // Constants for the strike zone
-  var far_left = -1;
-  var far_right = 1;
-  var top = 3.5;
-  var bottom = 1;
-
-  var h_1 = far_left + (far_right - far_left)/3
-  var h_2 = far_left + 2*(far_right - far_left)/3
-
-  var v_1 = bottom + (top - bottom)/3
-  var v_2 = bottom + 2*(top - bottom)/3
-
-  var v_middle = (top-bottom)/2 + bottom
-  var h_middle = (far_right - far_left)/2
-
-  var outer_height = v_middle/.8
-  var outer_width = h_middle/1.8
-
-
-  // Pain the inside borders (currently getting painted over)
-  // h_1
-  svg.append('line')
-    .style("stroke", "grey")
-    .style("stroke-width", .3)
-    .style("stroke-dasharray", ("5, 3"))
-    .attr("x1", x(h_1))
-    .attr("y1", y(bottom))
-    .attr("x2", x(h_1))
-    .attr("y2", y(top));
-
-
-  // h_2
-  svg.append('line')
-    .style("stroke", "grey")
-    .style("stroke-width", .3)
-    .style("stroke-dasharray", ("5, 3"))
-    .attr("x1", x(h_2))
-    .attr("y1", y(bottom))
-    .attr("x2", x(h_2))
-    .attr("y2", y(top));
-
-  // v_1
-  svg.append('line')
-    .style("stroke", "grey")
-    .style("stroke-width", .3)
-    .style("stroke-dasharray", ("5, 3"))
-    .attr("x1", x(far_left))
-    .attr("y1", y(v_1))
-    .attr("x2", x(far_right))
-    .attr("y2", y(v_1));
-
-
-
-  // v_2
-  svg.append('line')
-    .style("stroke", "grey")
-    .style("stroke-width", .3)
-    .style("stroke-dasharray", ("5, 3"))
-    .attr("x1", x(far_left))
-    .attr("y1", y(v_2))
-    .attr("x2", x(far_right))
-    .attr("y2", y(v_2));
-
-
-  // Background sqaures
-  var zoneSquares = []
-
-  // Bottom Row
-  var bl = svg.append("rect")
-    .attr('zone', 7)
-    .attr("x", x(far_left))
-    .attr("y", y(v_1))
-    .attr("width", -x(far_left) + x(h_1))
-    .attr("height",  -y(v_1)  + y(bottom))
-    .style("fill", myColor(zoneProbs['7']));
-  zoneSquares.push(bl)
-
-  var bm = svg.append("rect")
-    .attr('zone', 8)
-    .attr("x", x(h_1))
-    .attr("y", y(v_1))
-    .attr("width", -x(far_left) + x(h_1))
-    .attr("height",  -y(v_1)  + y(bottom))
-    .style("fill", myColor(zoneProbs['8']));
-  zoneSquares.push(bm)
-
-  var br = svg.append("rect")
-    .attr('zone', 9)
-    .attr("x", x(h_2))
-    .attr("y", y(v_1))
-    .attr("width", -x(far_left) + x(h_1))
-    .attr("height",  -y(v_1)  + y(bottom))
-    .style("fill", myColor(zoneProbs['9']));
-  zoneSquares.push(br)
-
-  // Middle Row
-  var ml = svg.append("rect")
-    .attr('zone', 4)
-    .attr("x", x(far_left))
-    .attr("y", y(v_2))
-    .attr("width", -x(far_left) + x(h_1))
-    .attr("height",  -y(v_1)  + y(bottom))
-    .style("fill", myColor(zoneProbs['4']));
-  zoneSquares.push(ml)
-
-  var mm = svg.append("rect")
-    .attr('zone', 5)
-    .attr("x", x(h_1))
-    .attr("y", y(v_2))
-    .attr("width", -x(far_left) + x(h_1))
-    .attr("height",  -y(v_1)  + y(bottom))
-    .style("fill", myColor(zoneProbs['5']));
-  zoneSquares.push(mm)
-
-  var mr = svg.append("rect")
-    .attr('zone', 6)
-    .attr("x", x(h_2))
-    .attr("y", y(v_2))
-    .attr("width", -x(far_left) + x(h_1))
-    .attr("height",  -y(v_1)  + y(bottom))
-    .style("fill", myColor(zoneProbs['6']));
-  zoneSquares.push(mr)
-
-  // top Row
-  var tl = svg.append("rect")
-    .attr('zone', 1)
-    .attr("x", x(far_left))
-    .attr("y", y(top))
-    .attr("width", -x(far_left) + x(h_1))
-    .attr("height",  -y(v_1)  + y(bottom))
-    .style("fill", myColor(zoneProbs['1']))
-  zoneSquares.push(tl)
-
-  var tm = svg.append("rect")
-    .attr('zone', 2)
-    .attr("x", x(h_1))
-    .attr("y", y(top))
-    .attr("width", -x(far_left) + x(h_1))
-    .attr("height",  -y(v_1)  + y(bottom))
-    .style("fill", myColor(zoneProbs['2']));
-  zoneSquares.push(tm)
-
-  var tr = svg.append("rect")
-    .attr('zone', 3)
-    .attr("x", x(h_2))
-    .attr("y", y(top))
-    .attr("width", -x(far_left) + x(h_1))
-    .attr("height",  -y(v_1)  + y(bottom))
-    .style("fill", myColor(zoneProbs['3']));
-  zoneSquares.push(tr)
-
-  // Outer zones
-  // Bottom Left
-  var z_13_1 = svg.append("rect")
-    .attr('zone', 13)
-    .attr("x", x(far_left - outer_width) + 1)
-    .attr("y", y(v_middle))
-    .attr("width",x(far_left) - x(far_left - outer_width))
-    .attr("height",  y(outer_height) )
-    .style("fill", myColor(zoneProbs['13']));
-  zoneSquares.push(z_13_1)
-
-  var z_13_2 = svg.append("rect")
-    .attr('zone', 13)
-    .attr("x", x(far_left))
-    .attr("y", y(bottom))
-    .attr("width",(x(h_middle) - x(far_left))/2)
-    .attr("height", -y(v_middle) + y(outer_height) + y(top) )
-    .style("fill", myColor(zoneProbs['13']));
-  zoneSquares.push(z_13_2)
-
-  // bottom right
-  var z_14_1 = svg.append("rect")
-    .attr('zone', 14)
-    .attr("x", x(far_right) - 1)
-    .attr("y", y(v_middle))
-    .attr("width", x(far_left) - x(far_left - outer_width))
-    .attr("height",   y(outer_height))
-    .style("fill", myColor(zoneProbs['14']));
-  zoneSquares.push(z_14_1)
-
-  var z_14_2 = svg.append("rect")
-    .attr('zone', 14)
-    .attr("x", x(far_left) + (x(h_middle) - x(far_left))/2)
-    .attr("y", y(bottom))
-    .attr("width",(x(h_middle) - x(far_left))/2)
-    .attr("height", -y(v_middle) + y(outer_height) + y(top) )
-    .style("fill", myColor(zoneProbs['14']));
-  zoneSquares.push(z_14_2)
-
-
-      // top left
-  var z_11_1 = svg.append("rect")
-    .attr('zone', 11)
-    .attr("x", x(far_left - outer_width) + 1)
-    .attr("y", y(v_middle) - y(outer_height))
-    .attr("width",x(far_left) - x(far_left - outer_width))
-    .attr("height",  y(outer_height) )
-    .style("fill", myColor(zoneProbs['11']));
-  zoneSquares.push(z_11_1)
-
-  var z_11_2 = svg.append("rect")
-    .attr('zone', 11)
-    .attr("x", x(far_left))
-    .attr("y", y(v_middle) - y(outer_height))
-    .attr("width",(x(h_middle) - x(far_left))/2)
-    .attr("height", -y(v_middle) + y(outer_height) + y(top) )
-    .style("fill", myColor(zoneProbs['11']));
-  zoneSquares.push(z_11_2)
-
-
-  // top right
-  var z_12_1 = svg.append("rect")
-    .attr('zone', 12)
-    .attr("x", x(far_right) - 1)
-    .attr("y", y(v_middle) - y(outer_height))
-    .attr("width",x(far_left) - x(far_left - outer_width))
-    .attr("height",  y(outer_height) )
-    .style("fill", myColor(zoneProbs['12']));
-  zoneSquares.push(z_12_1)
-
-
-  var z_12_2 = svg.append("rect")
-    .attr('zone', 12)
-    .attr("x", x(far_left) + (x(h_middle) - x(far_left))/2)
-    .attr("y", y(v_middle) - y(outer_height))
-    .attr("width",(x(h_middle) - x(far_left))/2)
-    .attr("height", -y(v_middle) + y(outer_height) + y(top) )
-    .style("fill", myColor(zoneProbs['12']));
-  zoneSquares.push(z_12_2)
-
-  // selected zone handlers
-  for (i = 0; i < zoneSquares.length; i++) {
-    zoneSquares[i].on('click', function(d) {
-      // clear text
-      d3.select('.zoneProb').text('')
-
-      // get clicked rect
-      var rect = d3.select(this)
-      var zone = rect.attr('zone')
-      if (rect.attr('class') === 'selected') {
-        if (rect.attr('zone') < 11 ) {
-          rect.attr('class', null)
-        } else {
-          d3.selectAll('rect').each(function() {
-            curRect = d3.select(this)
-            if (curRect.attr('zone') === zone) {
-              curRect.attr('class', null)
+function handlePitcherChange() {
+    let pitcherName = $('#selectPitcher').val();
+    $.get(`${baseApiUrl}/stats/pitcher?name=${encodeURIComponent(pitcherName)}`)
+        .done(function(pitchingData) {
+            currentPitchingData = pitchingData;
+            setPitchTypes(currentPitchingData);
+            if (currentPitchingData.length > 0 && currentPitchingData[0].p_throws) {
+                $('#selectPThrows').val(currentPitchingData[0].p_throws);
             }
-          })
-        }
-      } else {
-        d3.selectAll('rect').attr('class', null)
-        if (zone < 11) {
-          d3.select(this).attr('class', 'selected')
+            updateVisuals(true);
+        });
+}
+
+function filterPitchDots() {
+    let visibleOutcomes = [];
+    $('#outcome-legend input.outcome-filter:checked').each(function() {
+        visibleOutcomes.push($(this).val());
+    });
+    svg.selectAll('.pitch-dot').style('display', function(d) {
+        let category = getOutcomeCategory(d);
+        return visibleOutcomes.includes(category) ? '' : 'none';
+    });
+}
+
+$(document).ready(function() {
+    $.get(`${baseApiUrl}/stats/pitchers/names`).done(names => {
+        $.each(names, (i, name) => $('#selectPitcher').append(new Option(name, name)));
+        handlePitcherChange();
+    });
+    
+    $('#predictButton').on("click", () => updateVisuals(false));
+    $('#selectPitcher').on("change", handlePitcherChange);
+    $('#selectPitchType').on("change", () => updateVisuals(true));
+    $('.controls').on('change', 'select:not(#selectPitcher, #selectPitchType), input[type=checkbox], input[type=number]', () => updateVisuals(false));
+    $('.controls').on('change', 'input[type=range]', () => updateVisuals(false));
+    $('.controls').on('input', 'input[type=range]', updateAllSliderOutputs);
+
+    $('#outcome-legend').on('change', 'input', function() {
+        let colorCodeOn = $('#toggleDotColors').is(':checked');
+        svg.selectAll('.pitch-dot')
+            .style("fill", d => colorCodeOn ? outcomeColorScale(getOutcomeCategory(d)) : '#cccccc');
+        filterPitchDots();
+    });
+    
+    $('#theme-toggle').on('change', function() {
+        if(this.checked) {
+            $('body').removeClass('light-mode').addClass('dark-mode');
         } else {
-          d3.selectAll('rect').each(function() {
-            curRect = d3.select(this)
-            if (curRect.attr('zone') === zone) {
-              curRect.attr('class', 'selected')
-            }
-          })
+            $('body').removeClass('dark-mode').addClass('light-mode');
         }
-        var zoneProb = curZoneProbs[zone]
-        var text = 'Hit Probability for Zone ' + zone + ': ' + (zoneProb * 100).toFixed(3) + "%"
-        d3.select('#hitProbability').text(text).attr('class', 'zoneProb')
-      }
-    })
-  }
-
-  // MAIN strike zone outline BOX
-  var main_box_stroke_with = 3
-
-  // top
-  svg.append('line')
-    .style("stroke", "grey")
-    .style("stroke-width", main_box_stroke_with)
-    .style("stroke-dasharray", ("10, 8"))
-    .attr("x1", x(far_left))
-    .attr("y1", y(top))
-    .attr("x2", x(far_right))
-    .attr("y2", y(top));
-
-  // bottom
-  svg.append('line')
-    .style("stroke", "grey")
-    .style("stroke-width", main_box_stroke_with)
-    .style("stroke-dasharray", ("10, 8"))
-    .attr("x1", x(far_left))
-    .attr("y1", y(bottom))
-    .attr("x2", x(far_right))
-    .attr("y2", y(bottom));
-
-  // left
-  svg.append('line')
-    .style("stroke", "grey")
-    .style("stroke-width", main_box_stroke_with)
-    .style("stroke-dasharray", ("10, 8"))
-    .attr("x1", x(far_left))
-    .attr("y1", y(bottom))
-    .attr("x2", x(far_left))
-    .attr("y2", y(top));
-
-  // right
-  svg.append('line')
-    .style("stroke", "grey")
-    .style("stroke-width", main_box_stroke_with)
-    .style("stroke-dasharray", ("10, 8"))
-    .attr("x1", x(far_right))
-    .attr("y1", y(bottom))
-    .attr("x2", x(far_right))
-    .attr("y2", y(top));
-
-
-  var pitchesToPlot = pitchingData.filter(function(p) {
-    var xVal = x(p.plate_x)
-    var yVal = y(p.plate_z)
-    var inBounds = xVal >= 100 && xVal <= 300 && yVal >= 50 && yVal <= 300
-    return p.pitch_type === pitchType && inBounds
-  })
-  // add pitch dots
-  svg.append('g')
-    .selectAll("dot")
-    .data(pitchesToPlot)
-    .enter()
-    .append("circle")
-    .attr("cx", function (d) { return x(d.plate_x); } )
-    .attr("cy", function (d) { return y(d.plate_z); } )
-    .attr("r", 1.5)
-    .style("fill", "#FFFFFF")
-    .style('stroke', '#000000')
-    .on("mouseover", function(d) {
-      div.transition()
-        .duration(50)
-        .style("opacity", .9);
-      div.html(
-        'Pitch Date: ' + d.game_date
-        + "<br/>"
-        + 'Outcome: ' + d.description
-        + "<br/>"
-        + 'Speed: ' + d.release_speed
-      )
-        .style('display', 'block')
-        .style("left", (d3.event.pageX / scale) + "px")
-        .style("top", (d3.event.pageY - (28 * scale)) / scale + "px");
-    })
-    .on("mouseout", function(d) {
-      div.style('display', 'none')
+        // Redraw to apply new theme colors to SVG strokes
+        drawChartElements(currentPitchingData, curZoneProbs);
     });
 
-} // End intialize
-
-// set pitch type selector based on pitcher data
-function setPitchTypes (pitchingData) {
-  var pitchTypes = d3.set(d3.values(pitchingData).map(function(d) {return d.pitch_type})).values()
-  d3.select("#selectType")
-    .selectAll('option')
-    .remove()
-  d3.select("#selectType")
-    .selectAll('myOptions')
-    .data(pitchTypes)
-    .enter()
-    .append('option')
-    .text(function (d) { return d; }) // text showed in the menu
-    .attr("value", function (d) { return d; }) // corresponding value returned by the button
-}
-
-// generate visualization based on current input values
-function generateVisualization (pitcherChanged) {
-  var selectedPitcher = d3.select('#selectPitcher').property("value")
-  var selectedSpeed = d3.select('#selectSpeed').property('value')
-
-  var selectedPitch = d3.select('#selectType').property('value')
-  getPitcherData(selectedPitcher).then(function (pitchingData) {
-    if (pitcherChanged) {
-      setPitchTypes(pitchingData)
-      selectedPitch = d3.select('#selectType').property('value')
-    }
-    getZoneProbabilities(selectedPitcher, selectedPitch, selectedSpeed)
-      .then(function (zoneProbs) {
-        drawStrikeZone(pitchingData, selectedPitch, zoneProbs)
-      })
-  })
-}
-
-d3.select("#selectPitcher").on("change", function(d) {
-  d3.select('.zoneProb').text('')
-  generateVisualization(true)
-})
-
-d3.select("#selectType").on("change", function(d) {
-  d3.select('.zoneProb').text('')
-  generateVisualization(false)
-})
-
-d3.select("#selectSpeed").on("change", function(d) {
-  d3.select('.zoneProb').text('')
-  generateVisualization(false)
-})
-
-// STEP 1
-// Start by getting the pitchers' names
-getPitcherNames().then(function(names) {
-
-  // add the options to the pitch name button
-  d3.select("#selectPitcher")
-    .selectAll('myOptions')
-    .data(names)
-    .enter()
-    .append('option')
-    .text(function (d) { return d; }) // text showed in the menu
-    .attr("value", function (d) { return d; }) // corresponding value returned by the button
-
-  // STEP 2 - get the data for the selected name
-  // Get the selected name
-  generateVisualization(true)
-})
-
-
-
+    updateAllSliderOutputs();
+});
 </script>
+</body>
+</html>
