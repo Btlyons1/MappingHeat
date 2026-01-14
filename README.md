@@ -1,14 +1,17 @@
-# Mapping Heat
+# Mapping Heat ⚾
 
 ## Description
 Mapping Heat is an interactive web application for exploring major league pitching performance. It provides a dynamic heatmap that visualizes the predicted probability of a hit for any given pitch. This allows fans, analysts, and baseball professionals to explore complex pitcher-batter scenarios.
 
-This tool uses a machine learning model (LGBM) trained on recent Statcast data (2023-2024 Seasons) to generate its predictions. The frontend is built with D3.js and provides a comprehensive set of controls. These controls range from pitch type and speed to game situation and detailed pitch physics. They allow users to see how each variable impacts the probability of a hit in every part of the strike zone.
+This tool uses a machine learning model (LightGBM) trained on recent Statcast data (2023-2025 Seasons) to generate its predictions. The frontend is built with D3.js and provides a comprehensive set of controls. These controls range from pitch type and speed to game situation and detailed pitch physics. They allow users to see how each variable impacts the probability of a hit in every part of the strike zone.
 
-The project includes:
-- A Jupyter Notebook for data fetching, feature engineering, and model training.
-- A Flask backend that serves the ML model's predictions via a REST API.
-- An interactive D3.js frontend for data visualization and user control.
+**Key Features:**
+- 🎯 Real-time hit probability predictions using ML
+- 📊 Interactive strike zone heatmap (14 zones)
+- 📈 Historical pitch data visualization with outcome filtering
+- 🔄 Automatic switch hitter detection and support
+- 🎨 Dark/Light mode toggle
+- 🎮 Full control over pitch characteristics and game situations
 
 ![pitch_outcome](./gifs/dark_mode_outcomes.gif)
 
@@ -63,29 +66,82 @@ Moving from a linear model (Logistic Regression) to an advanced gradient boostin
 ###### Feature Expansion: 
 The most significant performance gain came from expanding the feature set. By including detailed pitch physics (like spin axis and release point) and more game context, the model was able to create a much more nuanced and accurate prediction.
 
-## Installation
-- Download entire package from GitHub
-- `cd` into backend directory
-- Go to the 'instance' folder and unzip mapping_heat.sqlite.zip
-- Go to the 'fixtures' folder and unzip pitching_data.csv.zip
-- Ensure you have unzipped the proper files before moving on
-- Ensure you all the proper packages, 'pip install -r requirements.txt'
-- Run `flask init-db` to initialize the SQLite data base
-- After these steps, the package is downloaded and ready to return
+## Quick Start
 
-## Execution
-- From the backend folder, 'export FLASK_APP=mapping_heat'
-- From the backend folder, 'export FLASK_ENV=development'
-- Run `flask run` which will launch the backend process
-- In a separate terminal, launch a local HTTP server via 'python3 -m http.server 8000'
-- Open 'http://0.0.0.0:8000/pitch_v1.html'in a browser of choice and the visual should be live
+### Option 1: Docker (Recommended)
 
+```bash
+# Clone the repository
+git clone <your-repo-url>
+cd MapppingHeat
 
+# Start the application
+docker-compose up --build
 
-### Hit endpoints
-- pitcher endpoint
-  -  ` curl  http://127.0.0.1:5000/stats/pitcher?name=Brad%20Hand | jq .`
-- pitch type endpoint
-  - `curl  "http://127.0.0.1:5000/stats/pitcher/pitch?name=Brad%20Hand&pitch=FF" | jq .`
-- pitch feature endpoint
-  - ` curl "http://127.0.0.1:5000/stats/pitcher?name=Brad%20Hand&feature=release_speed&value=78.7" | jq .`
+# Open in browser
+open http://localhost
+```
+
+### Option 2: Manual Setup
+
+```bash
+# 1. Install Python dependencies
+cd backend
+pip install -r requirements.txt
+
+# 2. Run the data pipeline (fetches data and trains model)
+python pipeline.py
+
+# 3. Start the backend API
+python app.py
+
+# 4. Open frontend
+# Open frontend/index.html in your browser
+```
+
+## Project Structure
+
+```
+MapppingHeat/
+├── backend/              # Flask API and ML pipeline
+│   ├── app.py           # REST API server
+│   ├── pipeline.py      # Data fetching & model training
+│   ├── model.py         # ML model wrapper
+│   ├── db.py            # Database queries
+│   └── artifacts/       # Trained model and data
+├── frontend/            # Web interface
+│   └── index.html       # Single-page app
+├── model/               # Development notebooks
+│   ├── model_evaluation.ipynb    # Model metrics & analysis
+│   └── new_model_batters.ipynb   # Model development
+└── docker-compose.yml   # Multi-container setup
+```
+
+## Documentation
+
+- **[Developer Guide](DEVELOPER_GUIDE.md)** - Complete guide for adding features and understanding the codebase
+- **[Model Evaluation Notebook](model/model_evaluation.ipynb)** - ROC, precision, recall, and other ML metrics
+
+## API Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/rosters` | GET | Get available batters, pitchers, and stances |
+| `/predict` | POST | Predict hit probability for a pitch |
+| `/pitch-profile` | GET | Get pitcher's average pitch characteristics |
+| `/stats/pitcher` | GET | Get historical pitches for a pitcher |
+
+**Examples:**
+
+```bash
+# Get pitcher stats
+curl "http://127.0.0.1:5001/stats/pitcher?name=Gerrit%20Cole" | jq .
+
+# Get pitch profile
+curl "http://127.0.0.1:5001/pitch-profile?pitcher=Gerrit%20Cole&pitch_type=FF" | jq .
+
+# Get rosters
+curl "http://127.0.0.1:5001/rosters" | jq .
+```
+
+See [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md#api-reference) for detailed API documentation.

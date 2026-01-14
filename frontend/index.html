@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<!-- Version: 2026-01-13-20:20 - Removed Update button, Added stance locking with tooltips -->
+<style>
+    :root {
+        --primary-accent-light: #007aff;
+        --secondary-accent-light: #3395ff;
+        --page-bg-light: linear-gradient(to right top, #f8f9fa, #e9ecef);
+        --card-bg-light: rgba(255, 255, 255, 0.9);
+        --text-primary-light: #212529;
+        --text-secondary-light: #6c757d;
+        --border-color-light: #dee2e6;
+        --input-bg-light: #f8f9fa;
+        --divider-color-light: #e9ecef;
+        --zone-stroke-light: #ffffff;
+        --tooltip-bg-light: rgba(255, 252, 252, 0.85);
+        --tooltip-text-light: #030303;
+
+        --primary-accent-dark: #4dabf7;
+        --secondary-accent-dark: #74c0fc;
+        --page-bg-dark: linear-gradient(to right top, #0c1a2e, #1a2b4b);
+        --card-bg-dark: rgba(26, 43, 75, 0.85);
+        --text-primary-dark: #e9ecef;
+        --text-secondary-dark: #adb5bd;
+        --border-color-dark: #343a40;
+        --input-bg-dark: #1f3558;
+        --divider-color-dark: #343a40;
+        --zone-stroke-dark: #a0a0a0;
+        --tooltip-bg-dark: #d0d0d0;
+        --tooltip-text-dark: #121212;
+
+        --hit-color: #39ff14;
+        --out-color: #ff0000;
+        --strike-color: rgb(233, 252, 63);
+        --ball-color: hsl(187, 100%, 50%);
+    }
+    body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        margin: 0;
+        padding: 20px;
+        transition: background-color 0.3s, color 0.3s;
+    }
+    body.light-mode {
+        background: var(--page-bg-light);
+        color: var(--text-primary-light);
+    }
+    body.dark-mode {
+        background: var(--page-bg-dark);
+        color: var(--text-primary-dark);
+    }
+    .main-container {
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        gap: 40px;
+        padding: 20px;
+        max-width: 2000px;
+        margin: auto;
+    }
+    .controls {
+        width: 450px;
+        flex-shrink: 0;
+        border: 1px solid;
+        padding: 30px;
+        border-radius: 16px;
+        box-shadow: 0 12px 28px rgba(0,0,0,0.07);
+        transition: background-color 0.3s, border-color 0.3s;
+        backdrop-filter: blur(10px);
+    }
+     body.light-mode .controls {
+        background: var(--card-bg-light);
+        border-color: var(--border-color-light);
+    }
+    body.dark-mode .controls {
+        background: var(--card-bg-dark);
+        border-color: var(--border-color-dark);
+    }
+    .visualization-container {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    h3 {
+        text-align: center;
+        margin-top: 0;
+        margin-bottom: 30px;
+        font-size: 1.8em;
+        font-weight: 700;
+    }
+    body.light-mode h3 { color: #000000; }
+    body.dark-mode h3 { color: var(--text-primary-dark); }
+
+    .theme-switcher {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        display: flex;
+        align-items: center;
+        z-index: 1000;
+    }
+    .theme-switcher span { margin-left: 8px; }
+    .switch { position: relative; display: inline-block; width: 60px; height: 34px; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; }
+    .slider:before { position: absolute; content: ""; height: 26px; width: 26px; left: 4px; bottom: 4px; background-color: white; transition: .4s; }
+    input:checked + .slider { background-color: var(--primary-accent-dark); }
+    input:focus + .slider { box-shadow: 0 0 1px var(--primary-accent-dark); }
+    input:checked + .slider:before { transform: translateX(26px); }
+    .slider.round { border-radius: 34px; }
+    .slider.round:before { border-radius: 50%; }
+
+    .input-group { margin-bottom: 22px; }
+    .input-group label {
+        font-weight: 500;
+        display: block;
+        margin-bottom: 10px;
+        font-size: 1em;
+        transition: color 0.3s;
+    }
+     body.light-mode .input-group label { color: var(--text-secondary-light); }
+     body.dark-mode .input-group label { color: var(--text-secondary-dark); }
+
+    .input-group select, .input-group input[type="number"] {
+        width: 100%;
+        padding: 12px;
+        box-sizing: border-box;
+        border: 1px solid;
+        border-radius: 8px;
+        font-size: 1em;
+        transition: background-color 0.3s, border-color 0.3s, color 0.3s;
+    }
+    body.light-mode .input-group select, body.light-mode .input-group input[type="number"] {
+        background-color: var(--input-bg-light);
+        border-color: var(--border-color-light);
+        color: var(--text-primary-light);
+    }
+    body.dark-mode .input-group select, body.dark-mode .input-group input[type="number"] {
+        background-color: var(--input-bg-dark);
+        border-color: var(--border-color-dark);
+        color: var(--text-primary-dark);
+    }
+    .input-group .count-container { display: flex; gap: 15px; align-items: center; }
+    .input-group .count-container > div { flex: 1; }
+    .input-group input[type="range"] { width: 65%; vertical-align: middle; }
+    .input-group output { font-size: 1em; font-weight: 500; vertical-align: middle; margin-left: 10px; }
+    body.light-mode .input-group output { color: #0d0d0d; }
+    body.dark-mode .input-group output { color: var(--text-secondary-dark); }
+
+    #predictButton {
+        width: 100%;
+        padding: 14px;
+        font-size: 1.2em;
+        font-weight: bold;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background-color 0.2s, transform 0.1s;
+        margin-top: 10px;
+    }
+    body.light-mode #predictButton { background-color: var(--primary-accent-light); }
+    body.dark-mode #predictButton { background-color: var(--primary-accent-dark); }
+    body.light-mode #predictButton:hover { background-color: var(--secondary-accent-light); transform: translateY(-2px); }
+    body.dark-mode #predictButton:hover { background-color: var(--secondary-accent-dark); transform: translateY(-2px); }
+
+    #hitProbability {
+        font-size: 1.4em;
+        font-weight: 600;
+        margin-top: 25px;
+        text-align: center;
+        transition: color 0.3s;
+    }
+     body.light-mode #hitProbability { color: var(--text-primary-light); }
+     body.dark-mode #hitProbability { color: var(--text-primary-dark); }
+
+    hr {
+        border: none;
+        height: 1px;
+        transition: background-color 0.3s;
+    }
+    body.light-mode hr { background-color: var(--divider-color-light); margin: 25px 0; }
+    body.dark-mode hr { background-color: var(--divider-color-dark); margin: 25px 0; }
+
+    details > summary { cursor: pointer; font-weight: 500; padding: 5px; font-size: 1.1em; }
+    body.light-mode details > summary { color: var(--text-secondary-light); }
+    body.dark-mode details > summary { color: var(--text-secondary-dark); }
+
+    #moreDetails .input-group label { font-size: 1.1em; font-weight: 600; }
+    #moreDetails .input-group output { font-size: 1.05em; font-weight: 500; }
+
+    #my_dataviz_container {
+        border: 1px solid;
+        border-radius: 12px;
+        padding: 15px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+        transition: background-color 0.3s, border-color 0.3s;
+        backdrop-filter: blur(10px);
+    }
+     body.light-mode #my_dataviz_container { background: var(--card-bg-light); border-color: var(--border-color-light); }
+     body.dark-mode #my_dataviz_container { background: var(--card-bg-dark); border-color: var(--border-color-dark); }
+
+    rect.heatmap_zone {
+        stroke-width: 2px;
+        cursor: pointer;
+        transition: stroke 0.3s;
+    }
+     body.light-mode rect.heatmap_zone { stroke: var(--zone-stroke-light); }
+     body.dark-mode rect.heatmap_zone { stroke: var(--zone-stroke-dark); }
+
+    rect.selected { stroke: limegreen !important; stroke-width: 5px !important; }
+
+    .pitch-dot {
+        transition: r 0.3s;
+        filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.7));
+    }
+
+    div.tooltip {
+        position: absolute;
+        text-align: left;
+        padding: 15px;
+        font: 16px sans-serif;
+        border-radius: 8px;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.2s, background-color 0.3s, color 0.3s;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    body.light-mode div.tooltip {
+        background: var(--tooltip-bg-light);
+        color: var(--tooltip-text-light);
+    }
+    body.dark-mode div.tooltip {
+        background: var(--tooltip-bg-dark);
+        color: var(--tooltip-text-dark);
+    }
+
+    #outcome-legend {
+        padding: 20px;
+        border-radius: 12px;
+        border: 1px solid;
+        transition: background-color 0.3s, border-color 0.3s;
+        backdrop-filter: blur(10px);
+    }
+    body.light-mode #outcome-legend { background: var(--card-bg-light); border-color: var(--border-color-light); }
+    body.dark-mode #outcome-legend { background: var(--card-bg-dark); border-color: var(--border-color-dark); }
+    #outcome-legend h4 { margin-top: 0; margin-bottom: 15px; text-align: center; font-size: 1.2em; }
+     body.light-mode #outcome-legend h4 { color: var(--text-primary-light); }
+     body.dark-mode #outcome-legend h4 { color: var(--text-primary-dark); }
+
+    .legend-item { display: inline-flex; align-items: center; margin: 5px 10px; cursor: pointer; font-size: 0.95em; }
+     body.light-mode .legend-item { color: var(--text-secondary-light); }
+     body.dark-mode .legend-item { color: var(--text-secondary-dark); }
+    .swatch { display: inline-block; width: 14px; height: 14px; border-radius: 50%; margin-right: 8px; border: 1px solid #777; }
+    .swatch.hit { background-color: var(--hit-color); }
+    .swatch.out { background-color: var(--out-color); }
+    .swatch.strike { background-color: var(--strike-color); }
+    .swatch.ball { background-color: var(--ball-color); }
+    .master-toggle { font-weight: 600; display: block; text-align: center; margin-bottom: 10px; }
+     body.light-mode .master-toggle { color: var(--text-primary-light); }
+     body.dark-mode .master-toggle { color: var(--text-primary-dark); }
+</style>
+<head>
+  <title>Mapping Heat</title>
+  <meta charset="utf-8">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://d3js.org/d3.v5.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+</head>
+<body class="light-mode">
+
+<div class="theme-switcher">
+    <label class="switch">
+        <input type="checkbox" id="theme-toggle">
+        <span class="slider round"></span>
+    </label>
+    <span>Dark Mode</span>
+</div>
+
+<div class="main-container">
+    <div class="controls">
+        <h3>Mapping Heat</h3>
+        <!-- NEW: Batter dropdown -->
+        <div class="input-group"><label for="selectBatter">Batter:</label><select id="selectBatter"></select></div>
+        <div class="input-group"><label for="selectPitcher">Pitcher:</label><select id="selectPitcher"></select></div>
+        <div class="input-group"><label for="selectPitchType">Pitch Type:</label><select id="selectPitchType"></select></div>
+        <div class="input-group"><label for="selectStand">Batter Stance:</label><select id="selectStand"><option value="R">R</option><option value="L">L</option></select></div>
+        <div class="input-group"><label for="selectPThrows">Pitcher Throws:</label><select id="selectPThrows" disabled><option value="R">R</option><option value="L">L</option></select></div>
+        <div class="input-group"><label for="valReleaseSpeed">Release Speed:</label><input type="range" min="60" max="105" step="0.1" value="92.0" id="valReleaseSpeed"/><output>92.0 mph</output></div>
+        <hr/>
+        <div class="input-group">
+            <label>Count & Situation</label>
+            <div class="count-container">
+                <div><select id="valBalls"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option></select> <span>Balls</span></div>
+                <div><select id="valStrikes"><option value="0">0</option><option value="1">1</option><option value="2">2</option></select> <span>Strikes</span></div>
+                <div><select id="valOuts"><option value="0">0</option><option value="1">1</option><option value="2">2</option></select> <span>Outs</span></div>
+            </div>
+        </div>
+        <div class="input-group"><label for="checkOn1b">Runners:</label><div class="runners-container"><input type="checkbox" id="checkOn1b"> 1B <input type="checkbox" id="checkOn2b"> 2B <input type="checkbox" id="checkOn3b"> 3B</div></div>
+        <hr/>
+        <div id="hitProbability">Click a zone for its probability</div>
+        <details id="moreDetails" open> <summary>More Pitch Features...</summary>
+            <div class="input-group"><label for="valEffectiveSpeed">Effective Speed:</label><input type="range" min="60" max="105" step="0.1" value="92.0" id="valEffectiveSpeed"/><output>92.0 mph</output></div>
+            <div class="input-group"><label for="valReleaseSpinRate">Spin Rate:</label><input type="range" min="1000" max="3500" step="10" value="2200" id="valReleaseSpinRate"/><output>2200 rpm</output></div>
+            <div class="input-group"><label for="valReleaseExtension">Extension:</label><input type="range" min="4.0" max="8.0" step="0.1" value="6.0" id="valReleaseExtension"/><output>6.0 ft</output></div>
+            <div class="input-group"><label for="valPfxX">Horiz. Break:</label><input type="range" min="-2.5" max="2.5" step="0.01" value="0.0" id="valPfxX"/><output>0.00 ft</output></div>
+            <div class="input-group"><label for="valPfxZ">Vert. Break:</label><input type="range" min="-2.5" max="2.5" step="0.01" value="1.0" id="valPfxZ"/><output>1.00 ft</output></div>
+            <div class="input-group"><label for="valSpinAxis">Spin Axis:</label><input type="range" min="0" max="360" step="1" value="215" id="valSpinAxis"/><output>215 °</output></div>
+            <div class="input-group"><label for="valReleasePosX">Release Pos X:</label><input type="range" min="-4.0" max="4.0" step="0.01" value="-1.8" id="valReleasePosX"/><output>-1.80 ft</output></div>
+            <div class="input-group"><label for="valReleasePosZ">Release Pos Z:</label><input type="range" min="4.0" max="7.0" step="0.01" value="5.9" id="valReleasePosZ"/><output>5.90 ft</output></div>
+            <div class="input-group"><label for="valArmAngle">Arm Angle:</label><input type="range" min="-90" max="90" step="1" value="25.0" id="valArmAngle"/><output>25.0 °</output></div>
+            <div class="input-group"><label for="valInning">Inning:</label><input type="number" id="valInning" min="1" max="20" value="1" step="1"></div>
+            <div class="input-group"><label for="valSzTop">Strike Zone Top:</label><input type="range" min="2.5" max="4.5" step="0.01" value="3.5" id="valSzTop"/><output>3.50 ft</output></div>
+            <div class="input-group"><label for="valSzBot">Strike Zone Bottom:</label><input type="range" min="1.0" max="2.5" step="0.01" value="1.6" id="valSzBot"/><output>1.60 ft</output></div>
+            <div class="input-group"><label for="valNThruorderPitcher">Times Thru Order:</label><input type="number" id="valNThruorderPitcher" min="1" max="5" value="1" step="1"></div>
+        </details>
+    </div>
+    <div class="visualization-container">
+        <div id="my_dataviz_container"></div>
+        <div id="outcome-legend">
+            <h4>Pitch Outcomes</h4>
+            <div class="legend-item master-toggle">
+              <label><input type="checkbox" id="toggleDotColors" checked> Color Code Outcomes</label>
+            </div>
+            <hr style="width: 80%;">
+            <div class="legend-filters">
+              <label class="legend-item"><input type="checkbox" class="outcome-filter" value="Hit" checked> <span class="swatch hit"></span> Hit</label>
+              <label class="legend-item"><input type="checkbox" class="outcome-filter" value="Out" checked> <span class="swatch out"></span> Out</label>
+              <label class="legend-item"><input type="checkbox" class="outcome-filter" value="Strike" checked> <span class="swatch strike"></span> Strike</label>
+              <label class="legend-item"><input type="checkbox" class="outcome-filter" value="Ball" checked> <span class="swatch ball"></span> Ball</label>
+            </div>
+            <hr style="width: 80%;">
+            <div class="legend-item">
+              <label for="yearFilter">Filter by Year:</label>
+              <select id="yearFilter" style="width: 100%; margin-top: 5px;">
+                <option value="all">All Years</option>
+              </select>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Responsive sizing - use viewport dimensions
+var margin = {top: 20, right: 20, bottom: 20, left: 20};
+var containerWidth = Math.min(window.innerWidth * 0.9, 1200);
+var width = containerWidth - margin.left - margin.right;
+var height = containerWidth - margin.top - margin.bottom;
+
+var svg;
+var baseApiUrl = 'http://localhost:5001'; // NEW backend (port 5001 to avoid macOS AirPlay)
+var currentPitchingData = [];
+var curZoneProbs = {};
+var batterStances = {}; // Mapping of batter name to stance (R/L)
+var tooltip = d3.select("body").append("div").attr("class", "tooltip");
+var outcomeColorScale = d3.scaleOrdinal()
+    .domain(['Hit', 'Out', 'Strike', 'Ball', 'Other'])
+    .range(['var(--hit-color)', 'var(--out-color)', 'var(--strike-color)', 'var(--ball-color)', '#cccccc']);
+
+function getOutcomeCategory(d) {
+    const hitEvents = ['single', 'double', 'triple', 'home_run'];
+    const outEvents = ['field_out', 'force_out', 'grounded_into_double_play', 'sac_fly', 'fielders_choice_out', 'sac_bunt', 'field_error'];
+
+    // Pitches with events (plate appearance outcomes)
+    if (hitEvents.includes(d.events)) return 'Hit';
+    if (outEvents.includes(d.events)) return 'Out';
+
+    // For pitches without events, use 'type' column if available (S/B/X)
+    // Otherwise infer from zone: zones 1-9 are in strike zone
+    if (d.type === 'S') return 'Strike';
+    if (d.type === 'B') return 'Ball';
+    if (d.type === 'X' && !hitEvents.includes(d.events)) return 'Out';
+
+    // Fallback: infer from zone when type column is missing
+    if (!d.events || d.events === '') {
+        if (d.zone >= 1 && d.zone <= 9) {
+            return 'Strike';
+        } else {
+            return 'Ball';
+        }
+    }
+
+    return 'Other';
+}
+
+// Load pitch profile and historical pitch dots
+function loadPitchProfile() {
+    let pitcher = $('#selectPitcher').val();
+    let pitchType = $('#selectPitchType').val();
+
+    if (!pitcher || !pitchType) return;
+
+    // Load pitch characteristics profile
+    $.get(`${baseApiUrl}/pitch-profile?pitcher=${encodeURIComponent(pitcher)}&pitch_type=${pitchType}`)
+        .done(function(data) {
+            if (data.profile) {
+                const profile = data.profile;
+                if (profile.release_speed) $('#valReleaseSpeed').val(profile.release_speed);
+                if (profile.release_spin_rate) $('#valReleaseSpinRate').val(profile.release_spin_rate);
+                if (profile.pfx_x !== undefined) $('#valPfxX').val(profile.pfx_x / 12); // Convert inches to feet
+                if (profile.pfx_z !== undefined) $('#valPfxZ').val(profile.pfx_z / 12); // Convert inches to feet
+                if (profile.release_extension) $('#valReleaseExtension').val(profile.release_extension);
+                if (profile.spin_axis) $('#valSpinAxis').val(profile.spin_axis);
+                if (profile.arm_angle) $('#valArmAngle').val(profile.arm_angle);
+                $('#valEffectiveSpeed').val($('#valReleaseSpeed').val());
+                updateAllSliderOutputs();
+            }
+        });
+
+    // Load historical pitch dots from database
+    if (pitcher && pitcher !== 'League Average') {
+        $.get(`${baseApiUrl}/stats/pitcher?name=${encodeURIComponent(pitcher)}`)
+            .done(function(pitches) {
+                currentPitchingData = pitches;
+
+                // Populate year filter dropdown with available years
+                const years = [...new Set(pitches.map(p => p.game_date ? p.game_date.substring(0, 4) : null).filter(y => y))].sort().reverse();
+                $('#yearFilter').html('<option value="all">All Years</option>' +
+                    years.map(y => `<option value="${y}">${y}</option>`).join(''));
+
+                // Populate pitch types dropdown with pitcher's actual repertoire
+                const pitchTypes = [...new Set(pitches.map(p => p.pitch_type).filter(pt => pt))].sort();
+                if (pitchTypes.length > 0) {
+                    setPitchTypes(pitchTypes);
+                }
+
+                drawChartElements(currentPitchingData, curZoneProbs);
+            })
+            .fail(function() {
+                currentPitchingData = [];
+                $('#yearFilter').html('<option value="all">All Years</option>');
+                drawChartElements([], curZoneProbs);
+            });
+    } else {
+        currentPitchingData = [];
+        $('#yearFilter').html('<option value="all">All Years</option>');
+        drawChartElements([], curZoneProbs);
+    }
+}
+
+function updateVisuals(zone = null) {
+    let pitcher = $('#selectPitcher').val() || null;
+    let batter = $('#selectBatter').val() || null;
+    
+    let pitch_data = {
+        pitch_type: $('#selectPitchType').val(),
+        release_speed: parseFloat($('#valReleaseSpeed').val()),
+        pfx_x: parseFloat($('#valPfxX').val()) * 12, // Convert feet to inches
+        pfx_z: parseFloat($('#valPfxZ').val()) * 12, // Convert feet to inches
+        release_spin_rate: parseInt($('#valReleaseSpinRate').val()),
+        release_extension: parseFloat($('#valReleaseExtension').val()),
+        effective_speed: parseFloat($('#valEffectiveSpeed').val()),
+        spin_axis: parseInt($('#valSpinAxis').val()),
+        release_pos_x: parseFloat($('#valReleasePosX').val()),
+        release_pos_z: parseFloat($('#valReleasePosZ').val()),
+        arm_angle: parseFloat($('#valArmAngle').val()),
+        balls: parseInt($('#valBalls').val()),
+        strikes: parseInt($('#valStrikes').val()),
+        outs_when_up: parseInt($('#valOuts').val()),
+        on_1b: $('#checkOn1b').is(":checked") ? 1 : 0,
+        on_2b: $('#checkOn2b').is(":checked") ? 1 : 0,
+        on_3b: $('#checkOn3b').is(":checked") ? 1 : 0,
+        inning: parseInt($('#valInning').val()),
+        sz_top: parseFloat($('#valSzTop').val()),
+        sz_bot: parseFloat($('#valSzBot').val()),
+        n_thruorder_pitcher: parseInt($('#valNThruorderPitcher').val()),
+        zone: zone || 5,
+        stand: $('#selectStand').val(),
+        p_throws: $('#selectPThrows').val(),
+        plate_x: 0.0,
+        plate_z: 2.5
+    };
+
+    // If updating all zones, make multiple requests
+    if (zone === null) {
+        let zonePromises = [];
+        for (let z = 1; z <= 14; z++) {
+            let zoneData = Object.assign({}, pitch_data, {zone: z});
+            zonePromises.push(
+                $.ajax({
+                    url: `${baseApiUrl}/predict`,
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        batter: batter,
+                        pitcher: pitcher,
+                        pitch_data: zoneData
+                    }),
+                    dataType: 'json'
+                })
+            );
+        }
+        
+        Promise.all(zonePromises).then(results => {
+            curZoneProbs = {};
+            results.forEach((result, idx) => {
+                curZoneProbs[(idx + 1).toString()] = result.probability;
+            });
+            drawChartElements(currentPitchingData, curZoneProbs);
+        });
+    }
+}
+
+function drawChartElements(pitchingData, zoneProbs) {
+    const probabilityValues = Object.values(zoneProbs).filter(v => v !== null && v >= 0);
+    const maxProb = d3.max(probabilityValues) || 0.50;
+    const minProb = d3.min(probabilityValues) || 0.05;
+
+    // Dynamic color scale based on actual probability range
+    // RdYlBu = Red→Yellow→Blue (hot→cold), so low domain value→Red, high domain value→Blue
+    // We want Red=high probability (bad for pitcher), Blue=low probability (good for pitcher)
+    // So domain should be [maxProb, minProb] (reversed) to map max→Red, min→Blue
+    let myColor = d3.scaleSequential(d3.interpolateRdYlBu).domain([maxProb, minProb]);
+    
+    svg = d3.select("#my_dataviz_container").html('').append("svg")
+      .attr("width", width + margin.left + margin.right).attr("height", height + margin.top + margin.bottom)
+      .append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+    
+    let x = d3.scaleLinear().domain([-2.5, 2.5]).range([0, width]);
+    let y = d3.scaleLinear().domain([0, 5]).range([height, 0]);
+    let sz = {l: -0.83, r: 0.83, t: 3.5, b: 1.5};
+    let h_third = (sz.r - sz.l) / 3, v_third = (sz.t - sz.b) / 3;
+
+    const zoneGeometries = [
+        { zone: '14', x: sz.l - h_third, y: sz.t + v_third, w: h_third * 5, h: v_third }, { zone: '13', x: sz.l - h_third, y: sz.b, w: h_third * 5, h: v_third },
+        { zone: '11', x: sz.l - h_third, y: sz.t, w: h_third, h: v_third * 3 }, { zone: '12', x: sz.r, y: sz.t, w: h_third, h: v_third * 3 },
+        { zone: '1', x: sz.l, y: sz.t, w: h_third, h: v_third }, { zone: '2', x: sz.l + h_third, y: sz.t, w: h_third, h: v_third }, { zone: '3', x: sz.l + 2 * h_third, y: sz.t, w: h_third, h: v_third },
+        { zone: '4', x: sz.l, y: sz.t - v_third, w: h_third, h: v_third }, { zone: '5', x: sz.l + h_third, y: sz.t - v_third, w: h_third, h: v_third }, { zone: '6', x: sz.l + 2 * h_third, y: sz.t - v_third, w: h_third, h: v_third },
+        { zone: '7', x: sz.l, y: sz.t - 2 * v_third, w: h_third, h: v_third }, { zone: '8', x: sz.l + h_third, y: sz.t - 2 * v_third, w: h_third, h: v_third }, { zone: '9', x: sz.l + 2 * h_third, y: sz.t - 2 * v_third, w: h_third, h: v_third }
+    ];
+
+    svg.selectAll(".heatmap_zone").data(zoneGeometries).enter().append("rect")
+      .attr("class", "heatmap_zone").attr("zone", d => d.zone)
+      .attr("x", d => x(d.x)).attr("y", d => y(d.y))
+      .attr("width", d => x(d.x + d.w) - x(d.x)).attr("height", d => y(d.y - d.h) - y(d.y))
+      .style("fill", d => myColor(zoneProbs[d.zone] || 0))
+      .on('click', function(d) {
+          d3.selectAll('.heatmap_zone').classed('selected', false);
+          d3.select(this).classed('selected', true);
+          let prob = curZoneProbs[d.zone];
+          if (prob !== undefined) $('#hitProbability').text(`Hit Prob. for Zone ${d.zone}: ${(prob*100).toFixed(2)}%`);
+      });
+
+    if (pitchingData && pitchingData.length > 0) {
+        let selectedPitchType = $('#selectPitchType').val();
+        svg.append('g').selectAll(".pitch-dot").data(pitchingData.filter(p=>p.pitch_type === selectedPitchType && p.plate_x != null))
+            .enter().append("circle").attr("class", d => `pitch-dot outcome-${getOutcomeCategory(d)}`)
+            .attr("cx", d=>x(d.plate_x)).attr("cy", d=>y(d.plate_z))
+            .attr("r", 6).style("fill", d => outcomeColorScale(getOutcomeCategory(d)))
+            .style('stroke', "rgba(0,0,0,0.7)").style('stroke-width', 1.5)
+            .on("mouseover", function(d) {
+                tooltip.transition().duration(200).style("opacity", 1);
+                tooltip.html(`<b>${d.events || d.description || 'N/A'}</b><br/>${d.release_speed.toFixed(1)} mph`)
+                    .style("left", (d3.event.pageX + 15) + "px").style("top", (d3.event.pageY - 15) + "px");
+            })
+            .on("mouseout", function() {
+                tooltip.transition().duration(500).style("opacity", 0);
+            });
+    }
+    filterPitchDots();
+}
+
+function setPitchTypes(pitchTypes) {
+    let select = $('#selectPitchType');
+    let currentVal = select.val();
+    select.empty();
+    $.each(pitchTypes, (i, pt) => { select.append(new Option(pt, pt)); });
+    if(pitchTypes.includes(currentVal)) {
+        select.val(currentVal);
+    } else if (pitchTypes.length > 0) {
+        select.val(pitchTypes[0]);
+    }
+}
+
+function updateAllSliderOutputs() {
+    $('.controls input[type="range"]').each(function() {
+        let el = $(this), output = el.next('output'), unit = output.text().split(' ')[1] || '';
+        let precision = (el.attr('id').includes("Plate") || el.attr('id').includes("Pos") || el.attr('id').includes("Extension") || el.attr('id').includes("Pfx")) ? 2 : 1;
+        output.text(parseFloat(el.val()).toFixed(precision) + " " + unit);
+    });
+}
+
+function filterPitchDots() {
+    let visibleOutcomes = [];
+    $('#outcome-legend input.outcome-filter:checked').each(function() {
+        visibleOutcomes.push($(this).val());
+    });
+
+    let selectedYear = $('#yearFilter').val();
+
+    svg.selectAll('.pitch-dot').style('display', function(d) {
+        let category = getOutcomeCategory(d);
+        let outcomeMatch = visibleOutcomes.includes(category);
+
+        let yearMatch = true;
+        if (selectedYear && selectedYear !== 'all' && d.game_date) {
+            yearMatch = d.game_date.substring(0, 4) === selectedYear;
+        }
+
+        return (outcomeMatch && yearMatch) ? '' : 'none';
+    });
+}
+
+$(document).ready(function() {
+    // Initialize with empty heatmap
+    drawChartElements([], {});
+
+    // Load rosters from new backend
+    $.get(`${baseApiUrl}/rosters`)
+        .done(data => {
+            // Store batter stances for auto-population
+            batterStances = data.batter_stances || {};
+
+            // Populate batter dropdown
+            $('#selectBatter').append(new Option('League Average', ''));
+            $.each(data.batters, (i, name) => $('#selectBatter').append(new Option(name, name)));
+
+            // Populate pitcher dropdown
+            $('#selectPitcher').append(new Option('League Average', ''));
+            $.each(data.pitchers, (i, name) => $('#selectPitcher').append(new Option(name, name)));
+
+            // Set default pitch types
+            setPitchTypes(['FF', 'SI', 'SL', 'CH', 'CU', 'FC']);
+
+            // Initial load
+            loadPitchProfile();
+            updateVisuals();
+        })
+        .fail(function(xhr, status, error) {
+            console.error('Failed to load rosters:', error, xhr.responseText);
+            alert('Failed to connect to backend. Please ensure the backend is running on port 5001.');
+        });
+    
+    $('#selectPitcher, #selectPitchType').on("change", function() {
+        loadPitchProfile();
+        updateVisuals();
+    });
+    $('#selectBatter').on("change", function() {
+        // Auto-populate batter stance when batter is selected
+        let batter = $('#selectBatter').val();
+
+        if (batter && batter !== 'League Average' && batterStances[batter]) {
+            let stance = batterStances[batter];
+
+            // Handle switch hitters: 'S' means they can bat from either side
+            if (stance === 'S') {
+                // Default to right-handed for switch hitters but allow changing
+                $('#selectStand').val('R');
+                $('#selectStand').prop('disabled', false);
+                $('#selectStand').attr('title', `${batter} is a switch hitter - you can change stance`);
+            } else {
+                // Non-switch hitter: lock to their natural stance
+                $('#selectStand').val(stance);
+                $('#selectStand').prop('disabled', true);
+                $('#selectStand').attr('title', `${batter} always bats ${stance === 'R' ? 'right' : 'left'}-handed`);
+            }
+        } else {
+            // League Average or unknown batter - allow manual selection
+            $('#selectStand').prop('disabled', false);
+            $('#selectStand').attr('title', 'Select batter stance manually');
+        }
+        updateVisuals();
+    });
+    $('.controls').on('change', 'select:not(#selectPitcher, #selectPitchType, #selectBatter), input[type=checkbox], input[type=number]', () => updateVisuals());
+    $('.controls').on('change', 'input[type=range]', () => updateVisuals());
+    $('.controls').on('input', 'input[type=range]', updateAllSliderOutputs);
+
+    $('#outcome-legend').on('change', 'input, select', function() {
+        let colorCodeOn = $('#toggleDotColors').is(':checked');
+        svg.selectAll('.pitch-dot')
+            .style("fill", d => colorCodeOn ? outcomeColorScale(getOutcomeCategory(d)) : '#cccccc');
+        filterPitchDots();
+    });
+    
+    $('#theme-toggle').on('change', function() {
+        if(this.checked) {
+            $('body').removeClass('light-mode').addClass('dark-mode');
+        } else {
+            $('body').removeClass('dark-mode').addClass('light-mode');
+        }
+        drawChartElements(currentPitchingData, curZoneProbs);
+    });
+
+    // Handle window resize for responsive visualization
+    let resizeTimeout;
+    $(window).on('resize', function() {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(function() {
+            // Recalculate dimensions
+            containerWidth = Math.min(window.innerWidth * 0.9, 1200);
+            width = containerWidth - margin.left - margin.right;
+            height = containerWidth - margin.top - margin.bottom;
+            // Redraw chart with new dimensions
+            drawChartElements(currentPitchingData, curZoneProbs);
+        }, 250); // Debounce resize events
+    });
+
+    updateAllSliderOutputs();
+});
+</script>
+</body>
+</html>

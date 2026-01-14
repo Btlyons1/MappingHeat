@@ -1,0 +1,35 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: mapping-heat-backend
+    ports:
+      - "5001:5000"
+    environment:
+      - FLASK_ENV=production
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./backend/artifacts:/app/artifacts:ro
+    networks:
+      - mapping-heat-network
+    restart: unless-stopped
+
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: mapping-heat-frontend
+    ports:
+      - "8080:80"  
+    depends_on:
+      backend:
+        condition: service_started
+    networks:
+      - mapping-heat-network
+    restart: unless-stopped
+
+networks:
+  mapping-heat-network:
+    driver: bridge
