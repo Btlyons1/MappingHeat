@@ -72,14 +72,14 @@ The most significant performance gain came from expanding the feature set. By in
 
 ```bash
 # Clone the repository
-git clone <your-repo-url>
+git clone https://github.com/Btlyons1/MappingHeat
 cd MapppingHeat
 
 # Start the application
 docker-compose up --build
 
 # Open in browser
-open http://localhost
+open http://localhost:8080
 ```
 
 ### Option 2: Manual Setup
