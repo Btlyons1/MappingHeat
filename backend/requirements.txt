@@ -1,31 +1,22 @@
-click
-flake8
-Flask
-Flask-Cors
-future
-ipykernel
-ipython
-ipython-genutils
-jupyter
-jupyter-client
-jupyter-console
-jupyter-core
-jupyterlab
-jupyterlab-server
-lightgbm
-matplotlib
-notebook
-numpy
-packaging
-pandas
-pandocfilters
-pickleshare
-pyarrow
-pybaseball
-requests
-scikit-learn
-scipy
-statsmodels
-csv_to_sqlite
+# Python dependencies for Mapping Heat Backend
+# Versions matched to local training environment for binary compatibility
 
+# Core ML/Data Science 
+numpy==2.0.2
+pandas==2.3.1
+scikit-learn==1.6.1
+lightgbm==4.6.0
 
+# Baseball data
+pybaseball==2.2.7
+
+# Web framework
+flask==3.0.0
+flask-cors==4.0.0
+
+# Utilities - IMPORTANT: Pin urllib3 to v1.x for LibreSSL compatibility
+requests==2.31.0
+urllib3==1.26.18
+
+# Optional: Add certifi for SSL certificates
+certifi==2023.7.22

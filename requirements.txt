@@ -1,0 +1,7 @@
+Flask
+gunicorn
+pybaseball
+lightgbm
+pandas
+numpy
+scikit-learn
