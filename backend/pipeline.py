@@ -434,14 +434,22 @@ class MappingHeatPipeline:
 
         # Sort chronologically to calculate sequence features correctly
         logger.info("Sorting pitches chronologically to build sequence features...")
-        sort_cols = ['game_date', 'game_pk', 'at_bat_number', 'pitch_number']
+        sort_cols = ['game_date', 'game_pk', 'at_bat_number', 'pitch_number', 'inning']
         # Check if all sort columns are present
         present_sort_cols = [c for c in sort_cols if c in df.columns]
-        df = df.sort_values(by=present_sort_cols).reset_index(drop=True)
+        if present_sort_cols:
+            df = df.sort_values(by=present_sort_cols).reset_index(drop=True)
 
-        # Shift features within each plate appearance (game_pk + at_bat_number)
+        # Shift features within each plate appearance (game_pk + at_bat_number or game_date + pitcher + batter + inning)
         logger.info("Extracting sequential pitch context features...")
-        gp = df.groupby(['game_pk', 'at_bat_number'])
+        if 'game_pk' in df.columns and 'at_bat_number' in df.columns:
+            group_cols = ['game_pk', 'at_bat_number']
+        else:
+            potential_cols = ['game_date', 'pitcher', 'batter', 'inning']
+            group_cols = [c for c in potential_cols if c in df.columns]
+            if not group_cols:
+                group_cols = ['player_name'] if 'player_name' in df.columns else df.columns[0]
+        gp = df.groupby(group_cols)
         
         # 1. Previous pitch type (categorical)
         df['prev_pitch_type'] = gp['pitch_type'].shift(1).fillna('None')
@@ -1002,12 +1010,47 @@ class MappingHeatPipeline:
 
 
 if __name__ == "__main__":
-    # Train on 2025 season (May through October) for fast development & testing
-    # This will fetch season stats and all pitches from the date range with sequence features
+    import argparse
+
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    default_artifacts_dir = os.path.join(script_dir, "artifacts")
+    default_cache_dir = os.path.join(script_dir, "cache")
+
+    parser = argparse.ArgumentParser(
+        description="Mapping Heat Data Pipeline: Fetches Statcast & FanGraphs data, trains LightGBM model, and saves artifacts."
+    )
+    parser.add_argument(
+        "--start-date",
+        type=str,
+        default="2023-04-01",
+        help="Start date for Statcast data in YYYY-MM-DD format (default: 2023-04-01)"
+    )
+    parser.add_argument(
+        "--end-date",
+        type=str,
+        default="2025-10-31",
+        help="End date for Statcast data in YYYY-MM-DD format (default: 2025-10-31)"
+    )
+    parser.add_argument(
+        "--output-dir",
+        type=str,
+        default=default_artifacts_dir,
+        help=f"Directory to save output model artifacts (default: {default_artifacts_dir})"
+    )
+    parser.add_argument(
+        "--cache-dir",
+        type=str,
+        default=default_cache_dir,
+        help=f"Directory to cache intermediate data (default: {default_cache_dir})"
+    )
+
+    args = parser.parse_args()
+
     pipeline = MappingHeatPipeline(
-        start_date="2025-05-01",  # Mid-2025 season
-        end_date="2025-10-31",     # End of 2025 season (through playoffs)
-        output_dir="artifacts"
+        start_date=args.start_date,
+        end_date=args.end_date,
+        output_dir=args.output_dir,
+        cache_dir=args.cache_dir
     )
     
     pipeline.run()
