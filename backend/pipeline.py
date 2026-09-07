@@ -29,15 +29,14 @@ def test_network_connection():
     try:
         # Test MLB Statcast API
         response = requests.get('https://baseballsavant.mlb.com', timeout=10)
-        logger.info("  ✓ MLB Statcast API accessible")
+        logger.info("MLB Statcast API accessible")
         return True
     except requests.exceptions.SSLError as e:
-        logger.error("  ✗ SSL Error - this is likely the urllib3/LibreSSL issue")
-        logger.error(f"    {e}")
-        logger.error("\n  FIX: Run 'pip install urllib3==1.26.18' to downgrade urllib3")
+        logger.error("SSL Error: urllib3 compatibility issue detected")
+        logger.error(f"{e}")
         return False
     except requests.exceptions.RequestException as e:
-        logger.error(f"  ✗ Network error: {e}")
+        logger.error(f"Network error: {e}")
         return False
 
 
@@ -77,7 +76,8 @@ class MappingHeatPipeline:
             'effective_speed', 'spin_axis', 'release_pos_x', 'release_pos_z',
             'arm_angle', 'on_1b', 'on_2b', 'on_3b', 'outs_when_up', 'inning',
             'sz_top', 'sz_bot', 'n_thruorder_pitcher', 'events', 'game_date',
-            'type', 'description'  # type: S/B/X for Strike/Ball/InPlay; description: detailed outcome
+            'type', 'description',  # type: S/B/X for Strike/Ball/InPlay; description: detailed outcome
+            'game_pk', 'at_bat_number', 'pitch_number'  # For pitch sequencing and tunneling
         ]
         
         # Additional ID columns needed for merging
@@ -95,11 +95,25 @@ class MappingHeatPipeline:
         """
         # Check cache first
         cache_file = os.path.join(self.cache_dir, f'season_stats_{min(years)}_{max(years)}.pkl')
+        fallback_cache = os.path.join(self.cache_dir, 'season_stats_2023_2025.pkl')
+        
+        selected_cache = None
         if os.path.exists(cache_file):
-            logger.info(f"Loading cached season stats from {cache_file}")
-            with open(cache_file, 'rb') as f:
+            selected_cache = cache_file
+        elif os.path.exists(fallback_cache):
+            logger.info(f"Standard cache {cache_file} not found, but fallback cache {fallback_cache} exists. Using it.")
+            selected_cache = fallback_cache
+            
+        if selected_cache:
+            logger.info(f"Loading cached season stats from {selected_cache}")
+            with open(selected_cache, 'rb') as f:
                 cached = pickle.load(f)
-            return cached['batting'], cached['pitching']
+            batting = cached['batting']
+            pitching = cached['pitching']
+            # Filter by the requested years
+            batting = batting[batting['year'].isin(years)].reset_index(drop=True)
+            pitching = pitching[pitching['year'].isin(years)].reset_index(drop=True)
+            return batting, pitching
 
         all_batting = []
         all_pitching = []
@@ -109,32 +123,32 @@ class MappingHeatPipeline:
             
             try:
                 # Fetch batting stats
-                logger.info(f"  → Downloading batting data for {year}...")
-                batting = batting_stats(year, qual=150)  # Minimum 50 PA
+                logger.info(f"Downloading batting data for {year}")
+                batting = batting_stats(year, qual=150)
                 batting['year'] = year
-                logger.info(f"  ✓ Fetched {len(batting)} batters for {year}")
+                logger.info(f"Fetched {len(batting)} batters for {year}")
                 all_batting.append(batting)
             except Exception as e:
-                logger.error(f"  ✗ Failed to fetch batting stats for {year}: {e}")
+                logger.error(f"Failed to fetch batting stats for {year}: {e}")
                 raise
             
             try:
                 # Fetch pitching stats
-                logger.info(f"  → Downloading pitching data for {year}...")
-                pitching = pitching_stats(year, qual=20)  # Minimum 20 IP
+                logger.info(f"Downloading pitching data for {year}")
+                pitching = pitching_stats(year, qual=20)
                 pitching['year'] = year
-                logger.info(f"  ✓ Fetched {len(pitching)} pitchers for {year}")
+                logger.info(f"Fetched {len(pitching)} pitchers for {year}")
                 all_pitching.append(pitching)
             except Exception as e:
-                logger.error(f"  ✗ Failed to fetch pitching stats for {year}: {e}")
+                logger.error(f"Failed to fetch pitching stats for {year}: {e}")
                 raise
         
         # Combine all years
         combined_batting = pd.concat(all_batting, ignore_index=True)
         combined_pitching = pd.concat(all_pitching, ignore_index=True)
 
-        logger.info(f"✓ Total batters across all years: {len(combined_batting)}")
-        logger.info(f"✓ Total pitchers across all years: {len(combined_pitching)}")
+        logger.info(f"Total batters across all years: {len(combined_batting)}")
+        logger.info(f"Total pitchers across all years: {len(combined_pitching)}")
 
         # Cache the results
         logger.info(f"Caching season stats to {cache_file}")
@@ -218,11 +232,10 @@ class MappingHeatPipeline:
             logger.info(f"Loading cached Statcast data from {cache_file}")
             with open(cache_file, 'rb') as f:
                 pitch_data = pickle.load(f)
-            logger.info(f"✓ Loaded {len(pitch_data):,} cached pitches")
+            logger.info(f"Loaded {len(pitch_data):,} cached pitches")
             return pitch_data
 
         logger.info(f"Fetching Statcast data from {self.start_date} to {self.end_date}")
-        logger.info("This may take 20-45 minutes for multi-year data...")
 
         from datetime import datetime, timedelta
 
@@ -246,20 +259,20 @@ class MappingHeatPipeline:
                 chunk_start_str = current.strftime('%Y-%m-%d')
                 chunk_end_str = chunk_end.strftime('%Y-%m-%d')
                 
-                logger.info(f"  → Chunk {chunk_num}: {chunk_start_str} to {chunk_end_str}")
+                logger.info(f"Chunk {chunk_num}: {chunk_start_str} to {chunk_end_str}")
                 
                 try:
                     chunk_data = statcast(start_dt=chunk_start_str, end_dt=chunk_end_str)
                     
                     if chunk_data is not None and len(chunk_data) > 0:
                         all_data.append(chunk_data)
-                        logger.info(f"    ✓ Fetched {len(chunk_data):,} pitches")
+                        logger.info(f"Fetched {len(chunk_data):,} pitches")
                     else:
-                        logger.warning(f"    ⚠ No data returned for this chunk")
+                        logger.warning("No data returned for this chunk")
                         
                 except Exception as e:
-                    logger.error(f"    ✗ Chunk failed: {e}")
-                    logger.warning(f"    Continuing with next chunk...")
+                    logger.error(f"Chunk failed: {e}")
+                    logger.warning("Continuing with next chunk")
                 
                 # Move to next chunk
                 current = chunk_end + timedelta(days=1)
@@ -270,17 +283,17 @@ class MappingHeatPipeline:
             
             # Combine all chunks
             pitch_data = pd.concat(all_data, ignore_index=True)
-            logger.info(f"  ✓ Total fetched: {len(pitch_data):,} pitches from {len(all_data)} chunks")
+            logger.info(f"Total fetched: {len(pitch_data):,} pitches from {len(all_data)} chunks")
             
             # Keep only necessary columns (including IDs for merging)
             available_cols = [col for col in self.cols_to_keep + self.merge_cols if col in pitch_data.columns]
             missing_cols = [col for col in self.cols_to_keep if col not in pitch_data.columns]
             
             if missing_cols:
-                logger.warning(f"  ⚠ Missing columns: {missing_cols}")
+                logger.warning(f"Missing columns: {missing_cols}")
             
             pitch_data = pitch_data[available_cols].copy()
-            logger.info(f"  ✓ Kept {len(available_cols)} relevant columns")
+            logger.info(f"Kept {len(available_cols)} relevant columns")
 
             # Cache the results
             logger.info(f"Caching Statcast data to {cache_file}")
@@ -361,7 +374,7 @@ class MappingHeatPipeline:
         batting_merge['batter_fg_id'] = batting_merge['batter_fg_id'].astype(int)
         
         # Keep only the rate stats we want
-        batter_cols_to_keep = ['batter_fg_id', 'year', 'wOBA', 'OBP', 'SLG', 'BB%', 'K%', 'ISO', 'BABIP']
+        batter_cols_to_keep = ['batter_fg_id', 'year', 'wOBA', 'OBP', 'SLG', 'BB%', 'K%', 'ISO', 'BABIP', 'HardHit%', 'Barrel%', 'Contact%', 'O-Swing%']
         available_batter_cols = [col for col in batter_cols_to_keep if col in batting_merge.columns or col == 'batter_fg_id' or col == 'year']
         batting_merge = batting_merge[available_batter_cols]
         batting_merge = batting_merge.add_prefix('batter_')
@@ -375,7 +388,7 @@ class MappingHeatPipeline:
         pitching_merge['pitcher_fg_id'] = pitching_merge['pitcher_fg_id'].astype(int)
         
         # Keep only the rate stats we want
-        pitcher_cols_to_keep = ['pitcher_fg_id', 'year', 'FIP', 'ERA', 'WHIP', 'K/9', 'BB/9', 'HR/9', 'BABIP']
+        pitcher_cols_to_keep = ['pitcher_fg_id', 'year', 'FIP', 'ERA', 'WHIP', 'K/9', 'BB/9', 'HR/9', 'BABIP', 'xFIP', 'xERA', 'SwStr%']
         available_pitcher_cols = [col for col in pitcher_cols_to_keep if col in pitching_merge.columns or col == 'pitcher_fg_id' or col == 'year']
         pitching_merge = pitching_merge[available_pitcher_cols]
         pitching_merge = pitching_merge.add_prefix('pitcher_')
@@ -419,6 +432,43 @@ class MappingHeatPipeline:
         """
         logger.info("Engineering features")
 
+        # Sort chronologically to calculate sequence features correctly
+        logger.info("Sorting pitches chronologically to build sequence features...")
+        sort_cols = ['game_date', 'game_pk', 'at_bat_number', 'pitch_number']
+        # Check if all sort columns are present
+        present_sort_cols = [c for c in sort_cols if c in df.columns]
+        df = df.sort_values(by=present_sort_cols).reset_index(drop=True)
+
+        # Shift features within each plate appearance (game_pk + at_bat_number)
+        logger.info("Extracting sequential pitch context features...")
+        gp = df.groupby(['game_pk', 'at_bat_number'])
+        
+        # 1. Previous pitch type (categorical)
+        df['prev_pitch_type'] = gp['pitch_type'].shift(1).fillna('None')
+        
+        # 2. Previous release speed
+        prev_release_speed = gp['release_speed'].shift(1)
+        # Pitch speed diff: current_speed - prev_speed
+        df['prev_pitch_speed_diff'] = df['release_speed'] - prev_release_speed
+        df['prev_pitch_speed_diff'] = df['prev_pitch_speed_diff'].fillna(0.0)
+        
+        # 3. Previous pitch coordinates (plate_x, plate_z)
+        prev_plate_x = gp['plate_x'].shift(1)
+        prev_plate_z = gp['plate_z'].shift(1)
+        # Tunneling delta: distance between current and previous location in feet
+        df['prev_pitch_location_dist'] = np.sqrt(
+            (df['plate_x'] - prev_plate_x)**2 + 
+            (df['plate_z'] - prev_plate_z)**2
+        )
+        df['prev_pitch_location_dist'] = df['prev_pitch_location_dist'].fillna(0.0)
+        
+        # 4. Pitch number: ensure it is numeric and filled
+        if 'pitch_number' in df.columns:
+            df['pitch_number'] = pd.to_numeric(df['pitch_number'], errors='coerce').fillna(1).astype(int)
+        else:
+            # Fallback calculation if not in columns
+            df['pitch_number'] = gp.cumcount() + 1
+
         # Create binary target: Hit (1) vs Out (0)
         hit_events = ['single', 'double', 'triple', 'home_run']
         out_events = ['field_out', 'strikeout', 'force_out', 'grounded_into_double_play',
@@ -435,6 +485,30 @@ class MappingHeatPipeline:
         for base in ['on_1b', 'on_2b', 'on_3b']:
             if base in df.columns:
                 df[base] = df[base].notna().astype(int)
+
+        # NEW: Add advanced baseball context features
+        logger.info("Adding advanced baseball context features...")
+        if 'stand' in df.columns and 'p_throws' in df.columns:
+            df['is_platoon_advantage'] = (df['stand'] != df['p_throws']).astype(int)
+            
+        if 'effective_speed' in df.columns and 'release_speed' in df.columns:
+            df['perceived_speed_diff'] = df['effective_speed'] - df['release_speed']
+            
+        if 'release_speed' in df.columns and 'plate_x' in df.columns:
+            df['speed_x_location'] = df['release_speed'] * df['plate_x'].abs()
+        if 'release_speed' in df.columns and 'plate_z' in df.columns:
+            df['speed_x_height'] = df['release_speed'] * df['plate_z']
+            
+        # Fastball velocity differential
+        pitcher_id_col = 'pitcher_fg_id' if 'pitcher_fg_id' in df.columns else 'pitcher'
+        fb_pitches = df[df['pitch_type'].isin(['FF', 'SI'])]
+        if len(fb_pitches) > 0 and 'release_speed' in df.columns:
+            fb_speeds = fb_pitches.groupby(pitcher_id_col)['release_speed'].mean()
+            df['pitcher_avg_fb_speed'] = df[pitcher_id_col].map(fb_speeds)
+            df['pitcher_avg_fb_speed'] = df['pitcher_avg_fb_speed'].fillna(93.0)
+            df['velocity_differential'] = df['pitcher_avg_fb_speed'] - df['release_speed']
+        else:
+            df['velocity_differential'] = 0.0
 
         # NEW: Add count context features (Week 1 improvement)
         logger.info("Adding count context features...")
@@ -463,7 +537,7 @@ class MappingHeatPipeline:
                 df[col] = df[col].fillna(median_val)
 
         # Encode categorical variables
-        categorical_cols = ['pitch_type', 'zone', 'stand', 'p_throws']
+        categorical_cols = ['pitch_type', 'zone', 'stand', 'p_throws', 'prev_pitch_type']
         for col in categorical_cols:
             if col in df.columns:
                 le = LabelEncoder()
@@ -494,7 +568,9 @@ class MappingHeatPipeline:
             'player_name', 'events', 'game_date', 'target', 'batter', 'pitcher',
             'batter_fg_id', 'pitcher_fg_id', 'year',
             'Name', 'Team', 'PlayerID', 'playerid', 'Season',
-            'Dollars', 'AuctionVal', 'RAR', 'WAR', 'Age Rng'
+            'Dollars', 'AuctionVal', 'RAR', 'WAR', 'Age Rng',
+            # Sequence/tunneling metadata and intermediate variables
+            'game_pk', 'at_bat_number', 'prev_release_speed', 'prev_plate_x', 'prev_plate_z', 'type', 'description'
         ]
 
         # Get all columns
@@ -550,15 +626,16 @@ class MappingHeatPipeline:
         logger.info(f"Training set: {X_train.shape[0]} samples")
         logger.info(f"Test set: {X_test.shape[0]} samples")
         
-        # Train model with Week 1 improvements
+        # Train model with tuned hyperparameters for new baseball features
         model = lgb.LGBMClassifier(
-            n_estimators=500,  # Increased from 200 for better performance
-            learning_rate=0.05,
+            n_estimators=600,
+            learning_rate=0.03,
             max_depth=6,
             num_leaves=31,
-            # NOTE: Removed class_weight='balanced' - it broke calibration
-            # Model already had perfect calibration (24.79% vs 24.80%)
-            # For probability predictions, calibration > recall
+            colsample_bytree=0.8,
+            subsample=0.8,
+            min_child_samples=50,
+            # Retain unweighted training to preserve probability calibration with MLB baseline hit rate
             random_state=42,
             n_jobs=-1,
             verbose=-1  # Suppress LightGBM warnings
@@ -571,8 +648,8 @@ class MappingHeatPipeline:
         train_score = model.score(X_train, y_train)
         test_score = model.score(X_test, y_test)
         
-        logger.info(f"✓ Train accuracy: {train_score:.4f} ({train_score*100:.2f}%)")
-        logger.info(f"✓ Test accuracy: {test_score:.4f} ({test_score*100:.2f}%)")
+        logger.info(f"Train accuracy: {train_score:.4f} ({train_score*100:.2f}%)")
+        logger.info(f"Test accuracy: {test_score:.4f} ({test_score*100:.2f}%)")
 
         # Save test data for model evaluation notebook
         test_data_path = os.path.join(self.output_dir, 'test_data.pkl')
@@ -582,7 +659,7 @@ class MappingHeatPipeline:
                 'y_test': y_test,
                 'feature_names': list(X.columns)
             }, f)
-        logger.info(f"✓ Saved test data to {test_data_path} for evaluation")
+        logger.info(f"Saved test data to {test_data_path} for evaluation")
 
         # Log feature importance (top 10) - using 'gain' for better insights
         importance_gain = model.booster_.feature_importance(importance_type='gain')
@@ -667,14 +744,27 @@ class MappingHeatPipeline:
         logger.info(f"Using {most_recent_year} roster data for UI dropdowns")
         
         # Save batters roster (most recent year only for UI)
-        batters = recent_batters[['Name', 'wOBA', 'OBP', 'SLG', 'BB%', 'K%']].to_dict('records')
+        batters_cols = ['Name', 'wOBA', 'OBP', 'SLG', 'BB%', 'K%', 'ISO', 'BABIP', 'HardHit%', 'Barrel%', 'Contact%', 'O-Swing%']
+        batters_avail = [col for col in batters_cols if col in recent_batters.columns]
+        batters = recent_batters[batters_avail].to_dict('records')
         batters_path = os.path.join(self.output_dir, 'batters.json')
         with open(batters_path, 'w') as f:
             json.dump(batters, f, indent=2)
         logger.info(f"Saved {len(batters)} batters to {batters_path}")
         
+        # Calculate average fastball speed per pitcher from pitch data for UI velocity differential
+        fb_speeds = {}
+        if hasattr(self, 'merged_pitch_data') and 'pitcher_fg_id' in self.merged_pitch_data.columns and 'release_speed' in self.merged_pitch_data.columns:
+            fb_pitches = self.merged_pitch_data[self.merged_pitch_data['pitch_type'].isin(['FF', 'SI'])]
+            fb_speeds = fb_pitches.groupby('pitcher_fg_id')['release_speed'].mean().to_dict()
+            
+        recent_pitchers = recent_pitchers.copy()
+        recent_pitchers['FB_velocity'] = recent_pitchers['IDfg'].map(fb_speeds).fillna(93.0)
+        
         # Save pitchers roster (most recent year only for UI)
-        pitchers = recent_pitchers[['Name', 'FIP', 'ERA', 'WHIP', 'K/9', 'BB/9']].to_dict('records')
+        pitchers_cols = ['Name', 'FIP', 'ERA', 'WHIP', 'K/9', 'BB/9', 'xFIP', 'xERA', 'SwStr%', 'FB_velocity']
+        pitchers_avail = [col for col in pitchers_cols if col in recent_pitchers.columns]
+        pitchers = recent_pitchers[pitchers_avail].to_dict('records')
         pitchers_path = os.path.join(self.output_dir, 'pitchers.json')
         with open(pitchers_path, 'w') as f:
             json.dump(pitchers, f, indent=2)
@@ -698,6 +788,45 @@ class MappingHeatPipeline:
             logger.warning("Creating empty pitch profiles file")
             profiles_path = os.path.join(self.output_dir, 'pitcher_pitch_profiles.json')
             with open(profiles_path, 'w') as f:
+                json.dump({}, f, indent=2)
+        
+        # Calculate and save pitcher repertoire (pitch type usage percentages)
+        if hasattr(self, 'merged_pitch_data') and 'player_name' in self.merged_pitch_data.columns and 'pitch_type' in self.merged_pitch_data.columns:
+            logger.info("Calculating pitcher repertoires...")
+            repertoire = {}
+            # Group by pitcher (player_name is "Last, First")
+            for pitcher_name, group in self.merged_pitch_data.groupby('player_name'):
+                if len(group) < 10:  # Minimum 10 pitches to calculate repertoire
+                    continue
+                counts = group['pitch_type'].value_counts()
+                total = len(group)
+                if total == 0:
+                    continue
+                
+                # Convert to percentages
+                pitch_mix = {}
+                for pt, count in counts.items():
+                    pitch_mix[str(pt)] = round((count / total) * 100, 1)
+                
+                # Convert "Last, First" name to "First Last" to match frontend select value
+                if ',' in pitcher_name:
+                    parts = pitcher_name.split(',')
+                    last_name = parts[0].strip()
+                    first_name = parts[1].strip()
+                    name_first_last = f"{first_name} {last_name}"
+                else:
+                    name_first_last = pitcher_name
+                
+                repertoire[name_first_last] = pitch_mix
+                
+            repertoire_path = os.path.join(self.output_dir, 'pitcher_repertoire.json')
+            with open(repertoire_path, 'w') as f:
+                json.dump(repertoire, f, indent=2)
+            logger.info(f"Saved pitch repertoire for {len(repertoire)} pitchers to {repertoire_path}")
+        else:
+            logger.warning("Could not calculate pitcher repertoires - merged data not available")
+            repertoire_path = os.path.join(self.output_dir, 'pitcher_repertoire.json')
+            with open(repertoire_path, 'w') as f:
                 json.dump({}, f, indent=2)
         
         # Save batter stances mapping from pitch data
@@ -754,6 +883,24 @@ class MappingHeatPipeline:
                 logger.info(f"Found {len(switch_hitters)} switch hitters")
             else:
                 logger.warning("No stance data available to create batter stance mapping")
+
+            # Create pitcher throwing hand mapping
+            logger.info("Creating pitcher throwing hand mapping from pitch data...")
+            pitcher_throws = {}
+            if 'p_throws' in self.merged_pitch_data.columns:
+                throws_counts = self.merged_pitch_data.dropna(subset=['player_name', 'p_throws']).groupby(['player_name', 'p_throws']).size().reset_index(name='count')
+                for player_name in throws_counts['player_name'].unique():
+                    df_p = throws_counts[throws_counts['player_name'] == player_name]
+                    most_common = df_p.loc[df_p['count'].idxmax(), 'p_throws']
+                    pitcher_throws[player_name] = most_common
+                    if ', ' in player_name:
+                        parts = player_name.split(', ')
+                        pitcher_throws[f"{parts[1]} {parts[0]}"] = most_common
+
+                throws_path = os.path.join(self.output_dir, 'pitcher_throws.json')
+                with open(throws_path, 'w') as f:
+                    json.dump(pitcher_throws, f, indent=2)
+                logger.info(f"Saved {len(pitcher_throws)} pitcher throws to {throws_path}")
         else:
             logger.warning("Could not create batter stance mapping - merged data not available")
 
@@ -855,10 +1002,10 @@ class MappingHeatPipeline:
 
 
 if __name__ == "__main__":
-    # Train on 2023-2025 seasons for better model accuracy
-    # This will fetch season stats for all years and all pitches from the date range
+    # Train on 2025 season (May through October) for fast development & testing
+    # This will fetch season stats and all pitches from the date range with sequence features
     pipeline = MappingHeatPipeline(
-        start_date="2023-04-01",  # Start of 2023 season
+        start_date="2025-05-01",  # Mid-2025 season
         end_date="2025-10-31",     # End of 2025 season (through playoffs)
         output_dir="artifacts"
     )
