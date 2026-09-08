@@ -63,7 +63,32 @@ The model preserves unweighted probability calibration to match the baseline maj
 ### Docker Setup
 
 ```bash
+# Clone the repository
+git clone https://github.com/Btlyons1/MappingHeat
+cd MapppingHeat
+
+# Start the application
 docker-compose up --build
+
+# Open in browser
+open http://localhost:8080
+```
+
+### Option 2: Manual Setup
+
+```bash
+# 1. Install Python dependencies
+cd backend
+pip install -r requirements.txt
+
+# 2. Run the data pipeline (fetches data and trains model)
+python pipeline.py
+
+# 3. Start the backend API
+python app.py
+
+# 4. Open frontend
+# Open frontend/index.html in your browser
 ```
 The frontend is available at `http://localhost:80` and the backend at `http://localhost:5000` inside Docker.
 
