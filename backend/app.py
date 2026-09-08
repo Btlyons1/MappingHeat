@@ -21,28 +21,28 @@ app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
 
 # Initialize database
-logger.info("=" * 60)
-logger.info("Starting Mapping Heat Backend (Hybrid Mode)")
-logger.info("=" * 60)
+logger.info("Initializing Mapping Heat backend")
 
 try:
     from db import init_db
     init_db()
 except Exception as e:
     logger.error(f"Database initialization failed: {e}")
-    logger.error("Continuing without database - pitch dots will not be available")
+    logger.error("Continuing without database: historical pitch queries will not be available")
 
 # Load ML model
 artifacts_dir = '/app/artifacts'
-logger.info(f"\nLoading ML model from: {artifacts_dir}")
+if not os.path.exists(artifacts_dir):
+    artifacts_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'artifacts'))
+logger.info(f"Loading ML model from {artifacts_dir}")
 
 try:
     import model as model_module
     MappingHeatModel = model_module.MappingHeatModel
     model = MappingHeatModel(artifacts_dir=artifacts_dir)
-    logger.info("✓ ML Model loaded successfully!")
+    logger.info("ML model loaded successfully")
 except Exception as e:
-    logger.error(f"✗ Failed to load ML model: {e}")
+    logger.error(f"Failed to load ML model: {e}")
     import traceback
     logger.error(traceback.format_exc())
     sys.exit(1)
@@ -51,14 +51,10 @@ except Exception as e:
 try:
     from stats import bp as stats_bp
     app.register_blueprint(stats_bp)
-    logger.info("✓ Stats blueprint registered")
+    logger.info("Stats blueprint registered")
 except Exception as e:
-    logger.warning(f"⚠ Stats blueprint registration failed: {e}")
-    logger.warning("  Historical pitch data will not be available")
-
-logger.info("=" * 60)
-logger.info("✓ Backend Ready!")
-logger.info("=" * 60)
+    logger.warning(f"Stats blueprint registration failed: {e}")
+    logger.warning("Historical pitch data will not be available")
 
 
 @app.route('/health', methods=['GET'])
@@ -100,7 +96,7 @@ def get_pitch_profile():
         pitch_type = request.args.get('pitch_type', 'FF')
         
         # Handle "Average" or empty selections
-        if pitcher_name in ['Average', '', None]:
+        if pitcher_name in ['Average', 'League Average', '', None]:
             pitcher_name = None
         
         profile = model.get_pitch_profile(pitcher_name, pitch_type)
@@ -147,9 +143,9 @@ def predict():
         pitch_data = data.get('pitch_data', {})
         
         # Handle "Average" or empty selections
-        if batter_name in ['Average', '', None]:
+        if batter_name in ['Average', 'League Average', '', None]:
             batter_name = None
-        if pitcher_name in ['Average', '', None]:
+        if pitcher_name in ['Average', 'League Average', '', None]:
             pitcher_name = None
         
         # Make prediction
@@ -199,16 +195,31 @@ def get_player_stats():
         
         if player_type == 'batter':
             stats = model.get_batter_stats(player_name)
+            return jsonify({
+                'player': player_name,
+                'type': player_type,
+                'stats': stats
+            }), 200
         elif player_type == 'pitcher':
             stats = model.get_pitcher_stats(player_name)
+            
+            # Retrieve repertoire (handling potential suffix like "Jack Flaherty (#656427)")
+            repertoire = {}
+            if player_name:
+                if player_name in model.repertoire:
+                    repertoire = model.repertoire[player_name]
+                else:
+                    raw_name = player_name.split(' (')[0]
+                    repertoire = model.repertoire.get(raw_name, {})
+                    
+            return jsonify({
+                'player': player_name,
+                'type': player_type,
+                'stats': stats,
+                'repertoire': repertoire
+            }), 200
         else:
             return jsonify({'error': 'Invalid type. Use "batter" or "pitcher"'}), 400
-        
-        return jsonify({
-            'player': player_name,
-            'type': player_type,
-            'stats': stats
-        }), 200
         
     except Exception as e:
         logger.error(f"Error fetching player stats: {e}")
@@ -229,7 +240,7 @@ def internal_error(error):
 
 
 if __name__ == '__main__':
-    logger.info("=" * 60)
-    logger.info("Starting Flask server on 0.0.0.0:5000")
-    logger.info("=" * 60)
-    app.run(host='0.0.0.0', port=5000, debug=False, use_reloader=False)
+    import os
+    port = 5000 if os.path.exists('/.dockerenv') or os.environ.get('FLASK_ENV') == 'production' else 5001
+    logger.info(f"Starting Flask server on 0.0.0.0:{port}")
+    app.run(host='0.0.0.0', port=port, debug=False, use_reloader=False)

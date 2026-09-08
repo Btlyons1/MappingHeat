@@ -1,5 +1,9 @@
 <!DOCTYPE html>
-<!-- Version: 2026-01-13-20:20 - Removed Update button, Added stance locking with tooltips -->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mapping Heat</title>
 <style>
     :root {
         --primary-accent-light: #007aff;
@@ -51,18 +55,18 @@
         display: flex;
         justify-content: center;
         align-items: flex-start;
-        gap: 40px;
-        padding: 20px;
-        max-width: 2000px;
+        gap: 20px;
+        padding: 10px;
+        max-width: 1400px;
         margin: auto;
     }
     .controls {
-        width: 450px;
+        width: 380px;
         flex-shrink: 0;
         border: 1px solid;
-        padding: 30px;
-        border-radius: 16px;
-        box-shadow: 0 12px 28px rgba(0,0,0,0.07);
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.05);
         transition: background-color 0.3s, border-color 0.3s;
         backdrop-filter: blur(10px);
     }
@@ -77,14 +81,17 @@
     .visualization-container {
         display: flex;
         flex-direction: column;
-        gap: 20px;
+        gap: 15px;
+        flex-grow: 1;
+        max-width: 800px;
+        width: 100%;
     }
 
     h3 {
         text-align: center;
         margin-top: 0;
-        margin-bottom: 30px;
-        font-size: 1.8em;
+        margin-bottom: 15px;
+        font-size: 1.5em;
         font-weight: 700;
     }
     body.light-mode h3 { color: #000000; }
@@ -109,24 +116,24 @@
     .slider.round { border-radius: 34px; }
     .slider.round:before { border-radius: 50%; }
 
-    .input-group { margin-bottom: 22px; }
+    .input-group { margin-bottom: 12px; }
     .input-group label {
         font-weight: 500;
         display: block;
-        margin-bottom: 10px;
-        font-size: 1em;
+        margin-bottom: 4px;
+        font-size: 0.9em;
         transition: color 0.3s;
     }
      body.light-mode .input-group label { color: var(--text-secondary-light); }
      body.dark-mode .input-group label { color: var(--text-secondary-dark); }
-
+ 
     .input-group select, .input-group input[type="number"] {
         width: 100%;
-        padding: 12px;
+        padding: 6px 10px;
         box-sizing: border-box;
         border: 1px solid;
         border-radius: 8px;
-        font-size: 1em;
+        font-size: 0.9em;
         transition: background-color 0.3s, border-color 0.3s, color 0.3s;
     }
     body.light-mode .input-group select, body.light-mode .input-group input[type="number"] {
@@ -142,10 +149,10 @@
     .input-group .count-container { display: flex; gap: 15px; align-items: center; }
     .input-group .count-container > div { flex: 1; }
     .input-group input[type="range"] { width: 65%; vertical-align: middle; }
-    .input-group output { font-size: 1em; font-weight: 500; vertical-align: middle; margin-left: 10px; }
+    .input-group output { font-size: 0.9em; font-weight: 500; vertical-align: middle; margin-left: 10px; }
     body.light-mode .input-group output { color: #0d0d0d; }
     body.dark-mode .input-group output { color: var(--text-secondary-dark); }
-
+ 
     #predictButton {
         width: 100%;
         padding: 14px;
@@ -162,7 +169,7 @@
     body.dark-mode #predictButton { background-color: var(--primary-accent-dark); }
     body.light-mode #predictButton:hover { background-color: var(--secondary-accent-light); transform: translateY(-2px); }
     body.dark-mode #predictButton:hover { background-color: var(--secondary-accent-dark); transform: translateY(-2px); }
-
+ 
     #hitProbability {
         font-size: 1.4em;
         font-weight: 600;
@@ -172,26 +179,26 @@
     }
      body.light-mode #hitProbability { color: var(--text-primary-light); }
      body.dark-mode #hitProbability { color: var(--text-primary-dark); }
-
+ 
     hr {
         border: none;
         height: 1px;
         transition: background-color 0.3s;
     }
-    body.light-mode hr { background-color: var(--divider-color-light); margin: 25px 0; }
-    body.dark-mode hr { background-color: var(--divider-color-dark); margin: 25px 0; }
-
-    details > summary { cursor: pointer; font-weight: 500; padding: 5px; font-size: 1.1em; }
+    body.light-mode hr { background-color: var(--divider-color-light); margin: 12px 0; }
+    body.dark-mode hr { background-color: var(--divider-color-dark); margin: 12px 0; }
+ 
+    details > summary { cursor: pointer; font-weight: 500; padding: 3px; font-size: 0.95em; }
     body.light-mode details > summary { color: var(--text-secondary-light); }
     body.dark-mode details > summary { color: var(--text-secondary-dark); }
-
-    #moreDetails .input-group label { font-size: 1.1em; font-weight: 600; }
-    #moreDetails .input-group output { font-size: 1.05em; font-weight: 500; }
-
+ 
+    #moreDetails .input-group label { font-size: 0.9em; font-weight: 600; }
+    #moreDetails .input-group output { font-size: 0.9em; font-weight: 500; }
+ 
     #my_dataviz_container {
         border: 1px solid;
         border-radius: 12px;
-        padding: 15px;
+        padding: 10px;
         box-shadow: 0 8px 24px rgba(0,0,0,0.06);
         transition: background-color 0.3s, border-color 0.3s;
         backdrop-filter: blur(10px);
@@ -258,6 +265,187 @@
     .master-toggle { font-weight: 600; display: block; text-align: center; margin-bottom: 10px; }
      body.light-mode .master-toggle { color: var(--text-primary-light); }
      body.dark-mode .master-toggle { color: var(--text-primary-dark); }
+
+    #matchup-dashboard {
+        margin-top: 15px;
+        padding: 15px;
+        border-radius: 10px;
+        border: 1px solid;
+        font-size: 0.9em;
+        line-height: 1.5;
+        transition: background-color 0.3s, border-color 0.3s;
+    }
+    body.light-mode #matchup-dashboard {
+        background: rgba(0, 0, 0, 0.02);
+        border-color: var(--border-color-light);
+        color: var(--text-primary-light);
+    }
+    body.dark-mode #matchup-dashboard {
+        background: rgba(255, 255, 255, 0.02);
+        border-color: var(--border-color-dark);
+        color: var(--text-primary-dark);
+    }
+    #matchup-dashboard h4 {
+        margin: 0 0 10px 0;
+        font-weight: 600;
+        font-size: 1.1em;
+        text-align: center;
+        border-bottom: 1px solid;
+        padding-bottom: 6px;
+    }
+    body.light-mode #matchup-dashboard h4 {
+        border-bottom-color: var(--divider-color-light);
+    }
+    body.dark-mode #matchup-dashboard h4 {
+        border-bottom-color: var(--divider-color-dark);
+    }
+    .profile-title {
+        font-weight: 600;
+        display: block;
+        margin-bottom: 4px;
+    }
+    body.light-mode .profile-title {
+        color: var(--primary-accent-light);
+    }
+    body.dark-mode .profile-title {
+        color: var(--primary-accent-dark);
+    }
+    body.light-mode #pitcher-profile-border {
+        border-left-color: var(--divider-color-light) !important;
+    }
+    body.dark-mode #pitcher-profile-border {
+        border-left-color: var(--divider-color-dark) !important;
+    }
+    body.light-mode #velocity-diff-indicator {
+        border-top-color: var(--divider-color-light) !important;
+    }
+    body.dark-mode #velocity-diff-indicator {
+        border-top-color: var(--divider-color-dark) !important;
+    }
+    #my_dataviz_container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    #my_dataviz_container svg {
+        width: 100%;
+        height: auto;
+        max-width: 1000px;
+    }
+    body.light-mode .platoon-yes {
+        color: #1e7e34 !important; /* darker green for contrast in light mode */
+    }
+    body.light-mode #pitchSequenceContext {
+        border-color: var(--border-color-light);
+    }
+    body.dark-mode #pitchSequenceContext {
+        border-color: var(--border-color-dark);
+    }
+    body.light-mode #pitcher-repertoire-container {
+        border-top-color: var(--divider-color-light) !important;
+    }
+    body.dark-mode #pitcher-repertoire-container {
+        border-top-color: var(--divider-color-dark) !important;
+    }
+    #btnAddSeqPitch {
+        background: var(--primary-accent-light);
+        transition: background-color 0.2s, transform 0.1s;
+    }
+    #btnAddSeqPitch:hover {
+        background: var(--secondary-accent-light);
+    }
+    #btnAddSeqPitch:active {
+        transform: scale(0.95);
+    }
+    body.dark-mode #btnAddSeqPitch {
+        background: var(--primary-accent-dark);
+        color: #121212;
+    }
+    body.dark-mode #btnAddSeqPitch:hover {
+        background: var(--secondary-accent-dark);
+    }
+    .seq-pitch-card select, .seq-pitch-card input[type="range"] {
+        background-color: transparent !important;
+        border: 1px solid var(--border-color-light);
+        color: inherit;
+    }
+    body.dark-mode .seq-pitch-card select, body.dark-mode .seq-pitch-card input[type="range"] {
+        border-color: var(--border-color-dark);
+    }
+    .repertoire-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 0.8em;
+        font-weight: 600;
+        padding: 3px 8px;
+        border-radius: 20px;
+        transition: all 0.2s;
+        border: 1px solid;
+    }
+    body.light-mode .repertoire-badge {
+        background: rgba(0, 0, 0, 0.03);
+        border-color: var(--border-color-light);
+        color: var(--text-primary-light);
+    }
+    body.dark-mode .repertoire-badge {
+        background: rgba(255, 255, 255, 0.05);
+        border-color: var(--border-color-dark);
+        color: var(--text-primary-dark);
+    }
+    .repertoire-badge:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    body.light-mode .repertoire-badge:hover {
+        background: rgba(0, 0, 0, 0.07);
+    }
+    body.light-mode #matchupReplayPanel {
+        border-color: var(--border-color-light);
+    }
+    body.dark-mode #matchupReplayPanel {
+        border-color: var(--border-color-dark);
+    }
+    .timeline-btn {
+        padding: 4px 8px;
+        font-size: 0.8em;
+        font-weight: bold;
+        border: 1px solid;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    body.light-mode .timeline-btn {
+        background: #f8f9fa;
+        border-color: var(--border-color-light);
+        color: var(--text-primary-light);
+    }
+    body.dark-mode .timeline-btn {
+        background: #1e1e1e;
+        border-color: var(--border-color-dark);
+        color: var(--text-primary-dark);
+    }
+    .timeline-btn.active {
+        color: white !important;
+        border-color: transparent !important;
+    }
+    body.light-mode .timeline-btn.active {
+        background: var(--primary-accent-light);
+    }
+    body.dark-mode .timeline-btn.active {
+        background: var(--primary-accent-dark);
+        color: #121212 !important;
+    }
+    body.light-mode #replayDetailsBox {
+        background: rgba(0,0,0,0.02);
+        border-color: var(--border-color-light);
+        color: var(--text-primary-light);
+    }
+    body.dark-mode #replayDetailsBox {
+        background: rgba(255,255,255,0.02);
+        border-color: var(--border-color-dark);
+        color: var(--text-primary-dark);
+    }
 </style>
 <head>
   <title>Mapping Heat</title>
@@ -281,13 +469,52 @@
 <div class="main-container">
     <div class="controls">
         <h3>Mapping Heat</h3>
-        <!-- NEW: Batter dropdown -->
         <div class="input-group"><label for="selectBatter">Batter:</label><select id="selectBatter"></select></div>
         <div class="input-group"><label for="selectPitcher">Pitcher:</label><select id="selectPitcher"></select></div>
         <div class="input-group"><label for="selectPitchType">Pitch Type:</label><select id="selectPitchType"></select></div>
         <div class="input-group"><label for="selectStand">Batter Stance:</label><select id="selectStand"><option value="R">R</option><option value="L">L</option></select></div>
         <div class="input-group"><label for="selectPThrows">Pitcher Throws:</label><select id="selectPThrows" disabled><option value="R">R</option><option value="L">L</option></select></div>
         <div class="input-group"><label for="valReleaseSpeed">Release Speed:</label><input type="range" min="60" max="105" step="0.1" value="92.0" id="valReleaseSpeed"/><output>92.0 mph</output></div>
+        
+        <!-- Collapsible Matchup Replay Panel -->
+        <details id="matchupReplayPanel" style="margin-bottom: 20px; border-radius: 8px; padding: 10px; border: 1px solid; display: none;">
+            <summary style="font-weight: 600; cursor: pointer; user-select: none;">Matchup At-Bat Replay...</summary>
+            <div style="margin-top: 12px;">
+                <div class="input-group" style="margin-bottom: 8px;">
+                    <label for="selectMatchupAtBat">Select At-Bat:</label>
+                    <select id="selectMatchupAtBat" style="font-size: 0.9em; padding: 4px; width: 100%; border-radius: 6px;"></select>
+                </div>
+                <div id="atBatTimelineContainer" style="display: none; border-top: 1px solid; padding-top: 10px; margin-top: 10px;">
+                    <label style="font-weight: 600; font-size: 0.85em; display: block; margin-bottom: 6px;">Pitches in At-Bat:</label>
+                    <div id="atBatPitchesTimeline" style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px;">
+                        <!-- Dynamically populated buttons for Pitch 1, Pitch 2, etc. -->
+                    </div>
+                    <div id="replayDetailsBox" style="font-size: 0.85em; padding: 8px; border-radius: 6px; border: 1px solid;">
+                        <!-- Show details of selected pitch (e.g. FF, 95 mph, called strike) -->
+                    </div>
+                </div>
+            </div>
+        </details>
+
+        <!-- Collapsible Pitch Sequence Context Control Panel -->
+        <details id="pitchSequenceContext" style="margin-bottom: 20px; border-radius: 8px; padding: 10px; border: 1px solid;">
+            <summary style="font-weight: 600; cursor: pointer; user-select: none;">Pitch Sequence Context...</summary>
+            <div style="margin-top: 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <span style="font-weight: 600; font-size: 0.9em;">Preceding Pitch Timeline</span>
+                    <button type="button" id="btnAddSeqPitch" style="color: white; border: none; border-radius: 4px; padding: 3px 8px; font-size: 0.8em; font-weight: bold; cursor: pointer;">
+                        + Add Pitch
+                    </button>
+                </div>
+                <div id="seqPitchesContainer" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px;">
+                    <!-- Dynamically populated preceding pitch cards -->
+                </div>
+                <div style="font-size: 0.85em; font-weight: 500; border-top: 1px solid; padding-top: 6px; margin-top: 6px;" id="currentPitchNumberLabel">
+                    Current Pitch: <b>#1 (First Pitch)</b>
+                </div>
+            </div>
+        </details>
+        
         <hr/>
         <div class="input-group">
             <label>Count & Situation</label>
@@ -300,7 +527,40 @@
         <div class="input-group"><label for="checkOn1b">Runners:</label><div class="runners-container"><input type="checkbox" id="checkOn1b"> 1B <input type="checkbox" id="checkOn2b"> 2B <input type="checkbox" id="checkOn3b"> 3B</div></div>
         <hr/>
         <div id="hitProbability">Click a zone for its probability</div>
-        <details id="moreDetails" open> <summary>More Pitch Features...</summary>
+        
+        <!-- Advanced Matchup Dashboard -->
+        <div id="matchup-dashboard" style="display: none;">
+            <h4>Advanced Matchup Context</h4>
+            <div id="platoon-indicator" style="text-align: center; font-weight: bold; margin-bottom: 12px; font-size: 1.05em;"></div>
+            
+            <div style="display: flex; gap: 15px;">
+                <div style="flex: 1;">
+                    <span class="profile-title">Batter Profile</span>
+                    <div id="batter-adv-stats" style="margin-top: 5px; font-size: 0.95em;">
+                        <!-- Populate dynamically -->
+                    </div>
+                </div>
+                <div style="flex: 1; border-left: 1px solid; padding-left: 10px;" id="pitcher-profile-border">
+                    <span class="profile-title">Pitcher Profile</span>
+                    <div id="pitcher-adv-stats" style="margin-top: 5px; font-size: 0.95em;">
+                        <!-- Populate dynamically -->
+                    </div>
+                </div>
+            </div>
+            <div id="velocity-diff-indicator" style="text-align: center; font-weight: 500; margin-top: 12px; padding-top: 8px; border-top: 1px solid;">
+                <!-- Dynamically show speed vs fastball velocity -->
+            </div>
+            
+            <!-- Pitcher Repertoire Breakdown -->
+            <div id="pitcher-repertoire-container" style="margin-top: 15px; padding-top: 10px; border-top: 1px solid;">
+                <span class="profile-title">Pitch Repertoire</span>
+                <div id="repertoire-bar-wrapper" style="margin-top: 8px;">
+                    <!-- Rendered dynamically -->
+                </div>
+            </div>
+        </div>
+
+        <details id="moreDetails"> <summary>More Pitch Features...</summary>
             <div class="input-group"><label for="valEffectiveSpeed">Effective Speed:</label><input type="range" min="60" max="105" step="0.1" value="92.0" id="valEffectiveSpeed"/><output>92.0 mph</output></div>
             <div class="input-group"><label for="valReleaseSpinRate">Spin Rate:</label><input type="range" min="1000" max="3500" step="10" value="2200" id="valReleaseSpinRate"/><output>2200 rpm</output></div>
             <div class="input-group"><label for="valReleaseExtension">Extension:</label><input type="range" min="4.0" max="8.0" step="0.1" value="6.0" id="valReleaseExtension"/><output>6.0 ft</output></div>
@@ -323,6 +583,9 @@
             <div class="legend-item master-toggle">
               <label><input type="checkbox" id="toggleDotColors" checked> Color Code Outcomes</label>
             </div>
+            <div class="legend-item master-toggle" id="headToHeadToggleContainer" style="display: none; margin-top: 5px;">
+              <label><input type="checkbox" id="checkHeadToHead" checked> Strictly Head-to-Head</label>
+            </div>
             <hr style="width: 80%;">
             <div class="legend-filters">
               <label class="legend-item"><input type="checkbox" class="outcome-filter" value="Hit" checked> <span class="swatch hit"></span> Hit</label>
@@ -344,15 +607,22 @@
 <script>
 // Responsive sizing - use viewport dimensions
 var margin = {top: 20, right: 20, bottom: 20, left: 20};
-var containerWidth = Math.min(window.innerWidth * 0.9, 1200);
+var containerWidth = Math.max(350, Math.min(650, window.innerWidth - 550));
 var width = containerWidth - margin.left - margin.right;
 var height = containerWidth - margin.top - margin.bottom;
 
 var svg;
-var baseApiUrl = 'http://localhost:5001'; // NEW backend (port 5001 to avoid macOS AirPlay)
+var precedingPitches = [];
+var currentAtBatPitches = [];
+var activeReplayPitchIndex = null;
+var baseApiUrl = 'http://localhost:5001';
 var currentPitchingData = [];
 var curZoneProbs = {};
 var batterStances = {}; // Mapping of batter name to stance (R/L)
+var pitcherThrows = {}; // Mapping of pitcher name to throwing hand (R/L)
+var batterIds = {}; // Mapping of batter name to MLBAM ID
+var pitcherIds = {}; // Mapping of pitcher name to MLBAM ID
+var selectedZone = null; // Track currently selected heatmap zone
 var tooltip = d3.select("body").append("div").attr("class", "tooltip");
 var outcomeColorScale = d3.scaleOrdinal()
     .domain(['Hit', 'Out', 'Strike', 'Ball', 'Other'])
@@ -360,39 +630,80 @@ var outcomeColorScale = d3.scaleOrdinal()
 
 function getOutcomeCategory(d) {
     const hitEvents = ['single', 'double', 'triple', 'home_run'];
-    const outEvents = ['field_out', 'force_out', 'grounded_into_double_play', 'sac_fly', 'fielders_choice_out', 'sac_bunt', 'field_error'];
+    const outEvents = ['field_out', 'strikeout', 'force_out', 'grounded_into_double_play', 'sac_fly', 'fielders_choice_out', 'sac_bunt', 'field_error', 'double_play', 'strikeout_double_play', 'sac_fly_double_play', 'fielders_choice'];
+    const ballEvents = ['walk', 'intent_walk', 'hit_by_pitch'];
 
     // Pitches with events (plate appearance outcomes)
-    if (hitEvents.includes(d.events)) return 'Hit';
-    if (outEvents.includes(d.events)) return 'Out';
+    if (d.events) {
+        if (hitEvents.includes(d.events)) return 'Hit';
+        if (outEvents.includes(d.events)) return 'Out';
+        if (ballEvents.includes(d.events)) return 'Ball';
+    }
 
     // For pitches without events, use 'type' column if available (S/B/X)
-    // Otherwise infer from zone: zones 1-9 are in strike zone
     if (d.type === 'S') return 'Strike';
     if (d.type === 'B') return 'Ball';
     if (d.type === 'X' && !hitEvents.includes(d.events)) return 'Out';
 
-    // Fallback: infer from zone when type column is missing
-    if (!d.events || d.events === '') {
-        if (d.zone >= 1 && d.zone <= 9) {
-            return 'Strike';
-        } else {
-            return 'Ball';
+    if (d.description) {
+        let desc = d.description.toLowerCase();
+        if (desc.includes('strike') || desc.includes('foul') || desc.includes('missed') || desc.includes('bunt')) return 'Strike';
+        if (desc.includes('ball') || desc.includes('blocked') || desc.includes('pitchout')) return 'Ball';
+    }
+
+    // Fallback: infer from zone when type/description column is missing
+    if (d.zone >= 1 && d.zone <= 9) {
+        return 'Strike';
+    } else {
+        return 'Ball';
+    }
+}
+
+function getReplayPitchOutcome(p, idx, pitchArray) {
+    const hitEvents = ['single', 'double', 'triple', 'home_run'];
+    const outEvents = ['field_out', 'strikeout', 'force_out', 'grounded_into_double_play', 'sac_fly', 'fielders_choice_out', 'sac_bunt', 'field_error', 'double_play', 'strikeout_double_play', 'sac_fly_double_play', 'fielders_choice'];
+    const ballEvents = ['walk', 'intent_walk', 'hit_by_pitch'];
+
+    // 1. Check final pitch event if available
+    if (p.events) {
+        if (hitEvents.includes(p.events)) return 'Hit';
+        if (outEvents.includes(p.events)) return 'Out';
+        if (ballEvents.includes(p.events)) return 'Ball';
+    }
+
+    // 2. For intermediate pitches in an at-bat, infer outcome directly from the count progression to the next pitch
+    if (pitchArray && idx < pitchArray.length - 1) {
+        let nextP = pitchArray[idx + 1];
+        if (nextP) {
+            let pStrikes = Math.round(p.strikes || 0);
+            let nextStrikes = Math.round(nextP.strikes || 0);
+            let pBalls = Math.round(p.balls || 0);
+            let nextBalls = Math.round(nextP.balls || 0);
+
+            // If strikes increased, or 2-strike foul (count stayed at 2 strikes without a ball added)
+            if (nextStrikes > pStrikes || (pStrikes === 2 && nextStrikes === 2 && nextBalls === pBalls)) {
+                return 'Strike';
+            }
+            // If balls increased
+            if (nextBalls > pBalls) {
+                return 'Ball';
+            }
         }
     }
 
-    return 'Other';
+    // 3. Fallback using type, description, or zone
+    return getOutcomeCategory(p);
 }
+
 
 // Load pitch profile and historical pitch dots
 function loadPitchProfile() {
     let pitcher = $('#selectPitcher').val();
-    let pitchType = $('#selectPitchType').val();
+    let pitchType = $('#selectPitchType').val() || 'FF';
 
-    if (!pitcher || !pitchType) return;
-
-    // Load pitch characteristics profile
-    $.get(`${baseApiUrl}/pitch-profile?pitcher=${encodeURIComponent(pitcher)}&pitch_type=${pitchType}`)
+    // Load pitch characteristics profile (for specific pitcher or league average)
+    let pitcherParam = (pitcher && pitcher !== 'League Average') ? encodeURIComponent(pitcher) : '';
+    $.get(`${baseApiUrl}/pitch-profile?pitcher=${pitcherParam}&pitch_type=${pitchType}`)
         .done(function(data) {
             if (data.profile) {
                 const profile = data.profile;
@@ -405,12 +716,18 @@ function loadPitchProfile() {
                 if (profile.arm_angle) $('#valArmAngle').val(profile.arm_angle);
                 $('#valEffectiveSpeed').val($('#valReleaseSpeed').val());
                 updateAllSliderOutputs();
+                updateMatchupDashboard();
             }
         });
 
     // Load historical pitch dots from database
     if (pitcher && pitcher !== 'League Average') {
-        $.get(`${baseApiUrl}/stats/pitcher?name=${encodeURIComponent(pitcher)}`)
+        let pitcherId = pitcherIds[pitcher];
+        let url = pitcherId 
+            ? `${baseApiUrl}/stats/pitcher?id=${pitcherId}`
+            : `${baseApiUrl}/stats/pitcher?name=${encodeURIComponent(pitcher)}`;
+
+        $.get(url)
             .done(function(pitches) {
                 currentPitchingData = pitches;
 
@@ -435,9 +752,147 @@ function loadPitchProfile() {
     } else {
         currentPitchingData = [];
         $('#yearFilter').html('<option value="all">All Years</option>');
+        setPitchTypes(['FF', 'SI', 'SL', 'CH', 'CU', 'FC']);
         drawChartElements([], curZoneProbs);
     }
+
 }
+
+function loadMatchupAtBats() {
+    let pitcher = $('#selectPitcher').val();
+    let batter = $('#selectBatter').val();
+    
+    // Hide replay panel by default
+    $('#matchupReplayPanel').hide();
+    $('#atBatTimelineContainer').hide();
+    $('#selectMatchupAtBat').empty();
+    currentAtBatPitches = [];
+    activeReplayPitchIndex = null;
+
+    if (!pitcher || pitcher === 'League Average' || !batter || batter === 'League Average') {
+        return;
+    }
+    
+    let pitcherId = pitcherIds[pitcher];
+    let batterId = batterIds[batter];
+    
+    if (!pitcherId || !batterId) {
+        return;
+    }
+    
+    $.get(`${baseApiUrl}/stats/matchup-at-bats?pitcher_id=${pitcherId}&batter_id=${batterId}`)
+        .done(function(atBats) {
+            if (atBats && atBats.length > 0) {
+                // Show panel
+                $('#matchupReplayPanel').show();
+                
+                // Populate dropdown
+                $('#selectMatchupAtBat').append(new Option('Choose an at-bat to replay...', ''));
+                atBats.forEach((ab, idx) => {
+                    let text = `${ab.game_date} - Inn ${ab.inning} - ${ab.outs_when_up} Out (${ab.final_event})`;
+                    let val = `${ab.game_date}|${ab.inning}|${ab.outs_when_up}`;
+                    $('#selectMatchupAtBat').append(new Option(text, val));
+                });
+            }
+        })
+        .fail(function(xhr, status, error) {
+            console.error("Failed to load matchup at-bats:", error);
+        });
+}
+
+function selectAtBatPitch(pitchIndex) {
+    if (pitchIndex === null || !currentAtBatPitches || !currentAtBatPitches[pitchIndex]) return;
+    
+    activeReplayPitchIndex = pitchIndex;
+    let p = currentAtBatPitches[pitchIndex];
+    
+    // Auto-fill values
+    let select = $('#selectPitchType');
+    if (select.find(`option[value="${p.pitch_type}"]`).length > 0) {
+        select.val(p.pitch_type);
+    } else {
+        select.append(new Option(p.pitch_type, p.pitch_type));
+        select.val(p.pitch_type);
+    }
+    
+    $('#valReleaseSpeed').val(p.release_speed);
+    $('#valBalls').val(Math.round(p.balls));
+    $('#valStrikes').val(Math.round(p.strikes));
+    $('#valOuts').val(Math.round(p.outs_when_up));
+    $('#valInning').val(Math.round(p.inning));
+    
+    $('#checkOn1b').prop('checked', !!p.on_1b);
+    $('#checkOn2b').prop('checked', !!p.on_2b);
+    $('#checkOn3b').prop('checked', !!p.on_3b);
+    
+    if (p.effective_speed) $('#valEffectiveSpeed').val(p.effective_speed);
+    if (p.release_spin_rate) $('#valReleaseSpinRate').val(p.release_spin_rate);
+    if (p.release_extension) $('#valReleaseExtension').val(p.release_extension);
+    if (p.pfx_x !== undefined) $('#valPfxX').val(p.pfx_x / 12);
+    if (p.pfx_z !== undefined) $('#valPfxZ').val(p.pfx_z / 12);
+    if (p.spin_axis) $('#valSpinAxis').val(p.spin_axis);
+    if (p.release_pos_x) $('#valReleasePosX').val(p.release_pos_x);
+    if (p.release_pos_z) $('#valReleasePosZ').val(p.release_pos_z);
+    if (p.arm_angle) $('#valArmAngle').val(p.arm_angle);
+    if (p.n_thruorder_pitcher) $('#valNThruorderPitcher').val(p.n_thruorder_pitcher);
+    if (p.sz_top) $('#valSzTop').val(p.sz_top);
+    if (p.sz_bot) $('#valSzBot').val(p.sz_bot);
+    
+    // Set preceding pitches for sequence analysis
+    precedingPitches = [];
+    for (let k = 0; k < pitchIndex; k++) {
+        let prev = currentAtBatPitches[k];
+        precedingPitches.push({
+            type: prev.pitch_type,
+            speed: prev.release_speed,
+            zone: prev.zone ? prev.zone.toString() : 'None'
+        });
+    }
+    
+    renderSequencePitches();
+    updateAllSliderOutputs();
+    
+    // Redraw timeline buttons to highlight the active one
+    $('#atBatPitchesTimeline .timeline-btn').removeClass('active');
+    $(`#btn-pitch-${pitchIndex}`).addClass('active');
+    
+    // Render detail box info
+    let outcomeCat = getReplayPitchOutcome(p, pitchIndex, currentAtBatPitches);
+    let eventStr = p.events ? p.events.replace(/_/g, ' ') : (p.description ? p.description.replace(/_/g, ' ') : outcomeCat);
+    eventStr = eventStr.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    
+    let typeName = pitchTypeNames[p.pitch_type] || p.pitch_type;
+    let detailHtml = `
+        <div style="font-weight: bold; font-size: 0.95em; margin-bottom: 4px; color: ${pitchColors[p.pitch_type] || '#888'};">
+            Pitch #${pitchIndex + 1}: ${typeName} (${p.release_speed.toFixed(1)} mph)
+        </div>
+        <div>Result: <b>${eventStr}</b></div>
+        <div style="font-size: 0.9em; margin-top: 3px; opacity: 0.85;">
+            Count: <b>${Math.round(p.balls)}-${Math.round(p.strikes)}</b> | Inning: <b>${Math.round(p.inning)}</b>
+        </div>
+    `;
+    $('#replayDetailsBox').html(detailHtml);
+    
+    // Force predict probability
+    updateMatchupDashboard();
+    updateVisuals();
+}
+
+const zoneCenters = {
+    1: {x: -0.55, z: 3.17},
+    2: {x: 0.0,   z: 3.17},
+    3: {x: 0.55,  z: 3.17},
+    4: {x: -0.55, z: 2.5},
+    5: {x: 0.0,   z: 2.5},
+    6: {x: 0.55,  z: 2.5},
+    7: {x: -0.55, z: 1.83},
+    8: {x: 0.0,   z: 1.83},
+    9: {x: 0.55,  z: 1.83},
+    11: {x: -1.11, z: 2.5},
+    12: {x: 1.11,  z: 2.5},
+    13: {x: 0.0,   z: 1.17},
+    14: {x: 0.0,   z: 3.83}
+};
 
 function updateVisuals(zone = null) {
     let pitcher = $('#selectPitcher').val() || null;
@@ -469,14 +924,41 @@ function updateVisuals(zone = null) {
         stand: $('#selectStand').val(),
         p_throws: $('#selectPThrows').val(),
         plate_x: 0.0,
-        plate_z: 2.5
+        plate_z: 2.5,
+        
+        // Sequence context features
+        pitch_number: precedingPitches.length + 1,
+        prev_pitch_type: 'None',
+        prev_release_speed: null,
+        prev_plate_x: null,
+        prev_plate_z: null
     };
+
+    if (precedingPitches.length > 0) {
+        let lastPitch = precedingPitches[precedingPitches.length - 1];
+        pitch_data.prev_pitch_type = lastPitch.type;
+        pitch_data.prev_release_speed = lastPitch.speed;
+        
+        if (lastPitch.zone !== "None") {
+            let center = zoneCenters[parseInt(lastPitch.zone)];
+            if (center) {
+                pitch_data.prev_plate_x = center.x;
+                pitch_data.prev_plate_z = center.z;
+            }
+        }
+    }
 
     // If updating all zones, make multiple requests
     if (zone === null) {
+        let zonesToPredict = [1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14];
         let zonePromises = [];
-        for (let z = 1; z <= 14; z++) {
-            let zoneData = Object.assign({}, pitch_data, {zone: z});
+        zonesToPredict.forEach(z => {
+            let center = zoneCenters[z];
+            let zoneData = Object.assign({}, pitch_data, {
+                zone: z,
+                plate_x: center.x,
+                plate_z: center.z
+            });
             zonePromises.push(
                 $.ajax({
                     url: `${baseApiUrl}/predict`,
@@ -490,31 +972,34 @@ function updateVisuals(zone = null) {
                     dataType: 'json'
                 })
             );
-        }
+        });
         
         Promise.all(zonePromises).then(results => {
             curZoneProbs = {};
             results.forEach((result, idx) => {
-                curZoneProbs[(idx + 1).toString()] = result.probability;
+                let z = zonesToPredict[idx];
+                curZoneProbs[z.toString()] = result.probability;
             });
             drawChartElements(currentPitchingData, curZoneProbs);
         });
     }
 }
 
+
 function drawChartElements(pitchingData, zoneProbs) {
     const probabilityValues = Object.values(zoneProbs).filter(v => v !== null && v >= 0);
-    const maxProb = d3.max(probabilityValues) || 0.50;
-    const minProb = d3.min(probabilityValues) || 0.05;
-
-    // Dynamic color scale based on actual probability range
-    // RdYlBu = Red→Yellow→Blue (hot→cold), so low domain value→Red, high domain value→Blue
-    // We want Red=high probability (bad for pitcher), Blue=low probability (good for pitcher)
-    // So domain should be [maxProb, minProb] (reversed) to map max→Red, min→Blue
-    let myColor = d3.scaleSequential(d3.interpolateRdYlBu).domain([maxProb, minProb]);
+    const avgProb = d3.mean(probabilityValues) || 0.25;
+    
+    // Centered dynamic color scale: center the scale around the matchup average with a +/- 0.10 buffer.
+    // This preserves visual color contrast for all matchups (low or high scoring) without being overly sensitive.
+    const maxDomain = Math.min(0.65, avgProb + 0.10);
+    const minDomain = Math.max(0.05, avgProb - 0.10);
+    let myColor = d3.scaleSequential(d3.interpolateRdYlBu).domain([maxDomain, minDomain]).clamp(true);
     
     svg = d3.select("#my_dataviz_container").html('').append("svg")
-      .attr("width", width + margin.left + margin.right).attr("height", height + margin.top + margin.bottom)
+      .attr("viewBox", `0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`)
+      .attr("width", "100%")
+      .attr("height", "100%")
       .append("g").attr("transform", `translate(${margin.left},${margin.top})`);
     
     let x = d3.scaleLinear().domain([-2.5, 2.5]).range([0, width]);
@@ -532,34 +1017,232 @@ function drawChartElements(pitchingData, zoneProbs) {
 
     svg.selectAll(".heatmap_zone").data(zoneGeometries).enter().append("rect")
       .attr("class", "heatmap_zone").attr("zone", d => d.zone)
+      .classed('selected', d => d.zone === selectedZone) // Reapply selection state on redraw
       .attr("x", d => x(d.x)).attr("y", d => y(d.y))
       .attr("width", d => x(d.x + d.w) - x(d.x)).attr("height", d => y(d.y - d.h) - y(d.y))
       .style("fill", d => myColor(zoneProbs[d.zone] || 0))
       .on('click', function(d) {
           d3.selectAll('.heatmap_zone').classed('selected', false);
           d3.select(this).classed('selected', true);
+          selectedZone = d.zone; // Keep track of selection
           let prob = curZoneProbs[d.zone];
           if (prob !== undefined) $('#hitProbability').text(`Hit Prob. for Zone ${d.zone}: ${(prob*100).toFixed(2)}%`);
       });
 
-    if (pitchingData && pitchingData.length > 0) {
-        let selectedPitchType = $('#selectPitchType').val();
-        svg.append('g').selectAll(".pitch-dot").data(pitchingData.filter(p=>p.pitch_type === selectedPitchType && p.plate_x != null))
-            .enter().append("circle").attr("class", d => `pitch-dot outcome-${getOutcomeCategory(d)}`)
-            .attr("cx", d=>x(d.plate_x)).attr("cy", d=>y(d.plate_z))
-            .attr("r", 6).style("fill", d => outcomeColorScale(getOutcomeCategory(d)))
-            .style('stroke', "rgba(0,0,0,0.7)").style('stroke-width', 1.5)
-            .on("mouseover", function(d) {
-                tooltip.transition().duration(200).style("opacity", 1);
-                tooltip.html(`<b>${d.events || d.description || 'N/A'}</b><br/>${d.release_speed.toFixed(1)} mph`)
-                    .style("left", (d3.event.pageX + 15) + "px").style("top", (d3.event.pageY - 15) + "px");
-            })
-            .on("mouseout", function() {
-                tooltip.transition().duration(500).style("opacity", 0);
-            });
+    // If there was a previously selected zone, update the probability readout
+    if (selectedZone !== null) {
+        let prob = zoneProbs[selectedZone];
+        if (prob !== undefined && prob !== null) {
+            $('#hitProbability').text(`Hit Prob. for Zone ${selectedZone}: ${(prob*100).toFixed(2)}%`);
+        } else {
+            $('#hitProbability').text(`Zone ${selectedZone}: No probability data`);
+        }
+    } else {
+        $('#hitProbability').text('Click a zone for its probability');
     }
+
+    // Color Code Outcomes checkbox state
+    let colorCodeOn = $('#toggleDotColors').is(':checked');
+
+    // Render Pitch Dots (Replay Mode vs Normal Historical Mode)
+    if (activeReplayPitchIndex !== null && currentAtBatPitches && currentAtBatPitches.length > 0) {
+        // REPLAY MODE: Display ONLY the pitches in this specific at-bat from Pitch 1 up to activeReplayPitchIndex
+        let replayG = svg.append('g').attr('class', 'at-bat-replay-dots');
+        let pitchesToDisplay = currentAtBatPitches.slice(0, activeReplayPitchIndex + 1);
+
+        const pitchTypeNamesMap = {
+            'FF': 'Four-Seam Fastball', 'SI': 'Sinker', 'SL': 'Slider',
+            'CH': 'Changeup', 'CU': 'Curveball', 'FC': 'Cutter',
+            'KC': 'Knuckle Curve', 'FS': 'Splitter', 'SV': 'Sweeper',
+            'ST': 'Sweeper', 'FA': 'Fastball', 'KN': 'Knuckleball',
+            'EP': 'Eephus', 'FO': 'Forkball', 'SC': 'Screwball', 'CS': 'Slow Curve'
+        };
+
+        pitchesToDisplay.forEach((p, idx) => {
+            if (p.plate_x == null || p.plate_z == null) return;
+
+            let isCurrent = (idx === activeReplayPitchIndex);
+            let outcomeCat = getReplayPitchOutcome(p, idx, currentAtBatPitches);
+            let color = colorCodeOn ? outcomeColorScale(outcomeCat) : '#cccccc';
+            let px = x(p.plate_x);
+            let py = y(p.plate_z);
+            let pitchName = pitchTypeNamesMap[p.pitch_type] || p.pitch_type || 'Pitch';
+            let eventStr = p.events ? p.events.replace(/_/g, ' ') : (p.description ? p.description.replace(/_/g, ' ') : outcomeCat);
+            eventStr = eventStr.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+
+            if (isCurrent) {
+                // Outer glowing circle for active pitch
+                replayG.append("circle")
+                    .attr("class", "replay-highlight-dot-glow")
+                    .attr("cx", px)
+                    .attr("cy", py)
+                    .attr("r", 16)
+                    .style("fill", color)
+                    .style("opacity", 0.45)
+                    .style("pointer-events", "none");
+
+                // Active pitch circle
+                let dot = replayG.append("circle")
+                    .attr("class", "replay-highlight-dot active")
+                    .attr("cx", px)
+                    .attr("cy", py)
+                    .attr("r", 10)
+                    .style("fill", color)
+                    .style("stroke", "#ffffff")
+                    .style("stroke-width", 2.5)
+                    .style("filter", "drop-shadow(0 0 5px rgba(0,0,0,0.8))")
+                    .style("cursor", "pointer");
+
+                // Pitch number inside circle
+                replayG.append("text")
+                    .attr("x", px)
+                    .attr("y", py + 4)
+                    .attr("text-anchor", "middle")
+                    .attr("font-size", "11px")
+                    .attr("font-weight", "bold")
+                    .attr("fill", "#ffffff")
+                    .style("pointer-events", "none")
+                    .text(`${idx + 1}`);
+
+                // Active pitch label tag beside circle
+                replayG.append("text")
+                    .attr("x", px + 14)
+                    .attr("y", py + 4)
+                    .attr("font-size", "11px")
+                    .attr("font-weight", "bold")
+                    .attr("fill", $("body").hasClass("dark-mode") ? "#ffffff" : "#111111")
+                    .style("text-shadow", "1px 1px 3px rgba(0,0,0,0.8)")
+                    .style("pointer-events", "none")
+                    .text(`Pitch #${idx + 1}: ${p.pitch_type} (${p.release_speed ? p.release_speed.toFixed(1) : ''} mph)`);
+
+                // Tooltip on hover
+                dot.on("mouseover", function() {
+                    tooltip.transition().duration(200).style("opacity", 1);
+                    tooltip.html(`
+                        <div style="font-weight: bold; border-bottom: 1px solid rgba(0,0,0,0.2); margin-bottom: 5px; padding-bottom: 3px;">
+                            Pitch #${idx + 1} (Active): ${eventStr}
+                        </div>
+                        Type: <b>${pitchName} (${p.pitch_type})</b><br/>
+                        Speed: <b>${p.release_speed ? p.release_speed.toFixed(1) : 'N/A'} mph</b><br/>
+                        Count: <b>${Math.round(p.balls)}-${Math.round(p.strikes)}</b>
+                    `)
+                    .style("left", (d3.event.pageX + 15) + "px").style("top", (d3.event.pageY - 15) + "px");
+                }).on("mouseout", function() {
+                    tooltip.transition().duration(500).style("opacity", 0);
+                });
+
+            } else {
+                // Preceding pitch in this at-bat
+                let dot = replayG.append("circle")
+                    .attr("class", "replay-pitch-dot preceding")
+                    .attr("cx", px)
+                    .attr("cy", py)
+                    .attr("r", 8)
+                    .style("fill", color)
+                    .style("opacity", 0.75)
+                    .style("stroke", "#ffffff")
+                    .style("stroke-width", 1.5)
+                    .style("cursor", "pointer");
+
+                // Pitch number inside preceding circle
+                replayG.append("text")
+                    .attr("x", px)
+                    .attr("y", py + 3.5)
+                    .attr("text-anchor", "middle")
+                    .attr("font-size", "10px")
+                    .attr("font-weight", "bold")
+                    .attr("fill", "#ffffff")
+                    .style("pointer-events", "none")
+                    .text(`${idx + 1}`);
+
+                // Tooltip on hover
+                dot.on("mouseover", function() {
+                    tooltip.transition().duration(200).style("opacity", 1);
+                    tooltip.html(`
+                        <div style="font-weight: bold; border-bottom: 1px solid rgba(0,0,0,0.2); margin-bottom: 5px; padding-bottom: 3px;">
+                            Pitch #${idx + 1}: ${eventStr}
+                        </div>
+                        Type: <b>${pitchName} (${p.pitch_type})</b><br/>
+                        Speed: <b>${p.release_speed ? p.release_speed.toFixed(1) : 'N/A'} mph</b><br/>
+                        Count: <b>${Math.round(p.balls)}-${Math.round(p.strikes)}</b>
+                    `)
+                    .style("left", (d3.event.pageX + 15) + "px").style("top", (d3.event.pageY - 15) + "px");
+                }).on("mouseout", function() {
+                    tooltip.transition().duration(500).style("opacity", 0);
+                });
+            }
+        });
+
+    } else if (pitchingData && pitchingData.length > 0) {
+        // NORMAL MODE: Render Historical Pitch Dots
+        let selectedPitchType = $('#selectPitchType').val();
+        let selectedBatter = $('#selectBatter').val();
+        let selectedBatterId = (selectedBatter && selectedBatter !== 'League Average') ? batterIds[selectedBatter] : null;
+
+        let filterHeadToHead = $('#checkHeadToHead').is(':checked');
+        let hasAnyMatchups = !selectedBatterId || pitchingData.some(p => p.batter && parseInt(p.batter) === parseInt(selectedBatterId));
+
+        let filteredPitches = pitchingData.filter(p => {
+            let typeMatch = p.pitch_type === selectedPitchType;
+            let coordsMatch = p.plate_x != null;
+            let batterMatch = !selectedBatterId || !filterHeadToHead || (p.batter && parseInt(p.batter) === parseInt(selectedBatterId));
+            return typeMatch && coordsMatch && batterMatch;
+        });
+
+        if (filteredPitches.length > 0) {
+            svg.append('g').selectAll(".pitch-dot").data(filteredPitches)
+                .enter().append("circle").attr("class", d => `pitch-dot outcome-${getOutcomeCategory(d)}`)
+                .attr("cx", d=>x(d.plate_x)).attr("cy", d=>y(d.plate_z))
+                .attr("r", 6).style("fill", d => colorCodeOn ? outcomeColorScale(getOutcomeCategory(d)) : '#cccccc')
+                .style('stroke', "rgba(0,0,0,0.7)").style('stroke-width', 1.5)
+                .on("mouseover", function(d) {
+                    tooltip.transition().duration(200).style("opacity", 1);
+                    
+                    let dateStr = d.game_date ? d.game_date : 'Unknown Date';
+                    const pitchTypeNamesMap = {
+                        'FF': 'Four-Seam Fastball', 'SI': 'Sinker', 'SL': 'Slider',
+                        'CH': 'Changeup', 'CU': 'Curveball', 'FC': 'Cutter',
+                        'KC': 'Knuckle Curve', 'FS': 'Splitter', 'SV': 'Sweeper',
+                        'ST': 'Sweeper', 'FA': 'Fastball', 'KN': 'Knuckleball',
+                        'EP': 'Eephus', 'FO': 'Forkball', 'SC': 'Screwball', 'CS': 'Slow Curve'
+                    };
+                    let pitchName = pitchTypeNamesMap[d.pitch_type] || d.pitch_type || 'Unknown Pitch';
+                    let eventStr = d.events ? d.events.replace(/_/g, ' ') : (d.description ? d.description.replace(/_/g, ' ') : 'Pitch');
+                    eventStr = eventStr.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+
+                    tooltip.html(`
+                        <div style="font-weight: bold; border-bottom: 1px solid rgba(0,0,0,0.2); margin-bottom: 5px; padding-bottom: 3px;">
+                            ${eventStr}
+                        </div>
+                        Date: <b>${dateStr}</b><br/>
+                        Speed: <b>${d.release_speed.toFixed(1)} mph</b><br/>
+                        Type: <b>${pitchName}</b>
+                    `)
+                    .style("left", (d3.event.pageX + 15) + "px").style("top", (d3.event.pageY - 15) + "px");
+                })
+                .on("mouseout", function() {
+                    tooltip.transition().duration(500).style("opacity", 0);
+                });
+        } else {
+            let message = "No historical pitches for this pitch type";
+            if (!hasAnyMatchups) {
+                message = "No historical matchups between these players";
+            }
+            svg.append("text")
+                .attr("class", "no-matchup-text")
+                .attr("x", x(0))
+                .attr("y", y(2.5))
+                .attr("text-anchor", "middle")
+                .style("fill", "#888888")
+                .style("font-size", "14px")
+                .style("font-style", "italic")
+                .text(message);
+        }
+    }
+
     filterPitchDots();
 }
+
 
 function setPitchTypes(pitchTypes) {
     let select = $('#selectPitchType');
@@ -574,7 +1257,7 @@ function setPitchTypes(pitchTypes) {
 }
 
 function updateAllSliderOutputs() {
-    $('.controls input[type="range"]').each(function() {
+    $('.controls input[type="range"]:not(.seq-speed-range)').each(function() {
         let el = $(this), output = el.next('output'), unit = output.text().split(' ')[1] || '';
         let precision = (el.attr('id').includes("Plate") || el.attr('id').includes("Pos") || el.attr('id').includes("Extension") || el.attr('id').includes("Pfx")) ? 2 : 1;
         output.text(parseFloat(el.val()).toFixed(precision) + " " + unit);
@@ -602,6 +1285,279 @@ function filterPitchDots() {
     });
 }
 
+const pitchColors = {
+    'FF': '#d22630', // Red
+    'SI': '#c47937', // Orange/Brown
+    'SL': '#337a5b', // Green
+    'CH': '#005c5c', // Cyan/Blue
+    'CU': '#b79720', // Yellow
+    'FC': '#802317', // Maroon
+    'KC': '#b79720', // Yellow (same as CU)
+    'FS': '#3395ff', // Light Blue
+    'SV': '#1d4ed8'  // Dark Blue
+};
+
+const pitchTypeNames = {
+    'FF': 'Four-Seam Fastball', 'SI': 'Sinker', 'SL': 'Slider',
+    'CH': 'Changeup', 'CU': 'Curveball', 'FC': 'Cutter',
+    'KC': 'Knuckle Curve', 'FS': 'Splitter', 'SV': 'Sweeper',
+    'ST': 'Sweeper', 'FA': 'Fastball', 'KN': 'Knuckleball',
+    'EP': 'Eephus', 'FO': 'Forkball', 'SC': 'Screwball', 'CS': 'Slow Curve'
+};
+
+function renderRepertoire(repertoire) {
+    let container = $('#repertoire-bar-wrapper');
+    container.empty();
+    
+    if (!repertoire || Object.keys(repertoire).length === 0) {
+        container.html('<div style="font-size: 0.85em; color: var(--text-secondary-dark); font-style: italic;">No repertoire data available</div>');
+        return;
+    }
+    
+    // Sort pitch types by usage percentage descending
+    let sortedPitches = Object.entries(repertoire)
+        .sort((a, b) => b[1] - a[1]);
+        
+    // Create a horizontal list of interactive badges
+    let html = `<div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 5px;">`;
+    sortedPitches.forEach(([pitchCode, pct]) => {
+        if (pct < 1) return; // Skip tiny values
+        let color = pitchColors[pitchCode] || '#6c757d';
+        let displayName = pitchTypeNames[pitchCode] || pitchCode;
+        html += `
+            <div class="repertoire-badge" 
+                 data-pitch="${pitchCode}"
+                 style="cursor: pointer;"
+                 title="${displayName}">
+                 <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: ${color}; flex-shrink: 0;"></span>
+                 <span style="font-family: inherit;">${pitchCode} <b style="font-family: monospace; font-size: 0.95em; margin-left: 2px;">${pct}%</b></span>
+            </div>
+        `;
+    });
+    html += `</div>`;
+    
+    container.html(html);
+    
+    // Add click event listeners
+    container.find('.repertoire-badge').on('click', function() {
+        let pitchCode = $(this).attr('data-pitch');
+        let select = $('#selectPitchType');
+        if (select.find(`option[value="${pitchCode}"]`).length > 0) {
+            select.val(pitchCode).trigger('change');
+        } else {
+            select.append(new Option(pitchCode, pitchCode));
+            select.val(pitchCode).trigger('change');
+        }
+    });
+}
+
+function renderSequencePitches() {
+    let container = $('#seqPitchesContainer');
+    container.empty();
+    
+    precedingPitches.forEach((pitch, index) => {
+        let pitchNum = index + 1;
+        let color = pitchColors[pitch.type] || '#6c757d';
+        
+        let cardHtml = `
+            <div class="seq-pitch-card" data-index="${index}" style="border: 1px solid; border-radius: 6px; padding: 6px 8px; background: rgba(0,0,0,0.02); display: flex; flex-direction: column; gap: 4px; position: relative;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-weight: bold; font-size: 0.85em; color: ${color}; font-family: monospace;">Pitch #${pitchNum} - ${pitch.type}</span>
+                    <button type="button" class="btn-remove-seq" data-index="${index}" style="background: transparent; color: #ff4d4d; border: none; font-size: 1.1em; cursor: pointer; padding: 0 4px; line-height: 1;">&times;</button>
+                </div>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <div style="flex: 1; display: flex; flex-direction: column; gap: 1px;">
+                        <label style="font-size: 0.7em; margin-bottom: 2px; font-weight: 500;">Type</label>
+                        <select class="seq-type-select" data-index="${index}" style="font-size: 0.8em; padding: 2px 4px; border-radius: 4px;">
+                            <option value="FF" ${pitch.type === 'FF' ? 'selected' : ''}>FF</option>
+                            <option value="SI" ${pitch.type === 'SI' ? 'selected' : ''}>SI</option>
+                            <option value="SL" ${pitch.type === 'SL' ? 'selected' : ''}>SL</option>
+                            <option value="CH" ${pitch.type === 'CH' ? 'selected' : ''}>CH</option>
+                            <option value="CU" ${pitch.type === 'CU' ? 'selected' : ''}>CU</option>
+                            <option value="FC" ${pitch.type === 'FC' ? 'selected' : ''}>FC</option>
+                            <option value="SV" ${pitch.type === 'SV' ? 'selected' : ''}>SV</option>
+                        </select>
+                    </div>
+                    <div style="flex: 1.4; display: flex; flex-direction: column; gap: 1px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <label style="font-size: 0.7em; margin-bottom: 2px; font-weight: 500;">Speed</label>
+                            <span style="font-size: 0.7em; font-weight: bold;" class="seq-speed-label">${pitch.speed} mph</span>
+                        </div>
+                        <input type="range" class="seq-speed-range" data-index="${index}" min="60" max="105" step="0.5" value="${pitch.speed}" style="width: 100%; margin: 0; padding: 0;"/>
+                    </div>
+                    <div style="flex: 1; display: flex; flex-direction: column; gap: 1px;">
+                        <label style="font-size: 0.7em; margin-bottom: 2px; font-weight: 500;">Zone</label>
+                        <select class="seq-zone-select" data-index="${index}" style="font-size: 0.8em; padding: 2px 4px; border-radius: 4px;">
+                            <option value="None" ${pitch.zone === 'None' ? 'selected' : ''}>Out</option>
+                            <option value="1" ${pitch.zone === '1' ? 'selected' : ''}>1</option>
+                            <option value="2" ${pitch.zone === '2' ? 'selected' : ''}>2</option>
+                            <option value="3" ${pitch.zone === '3' ? 'selected' : ''}>3</option>
+                            <option value="4" ${pitch.zone === '4' ? 'selected' : ''}>4</option>
+                            <option value="5" ${pitch.zone === '5' ? 'selected' : ''}>5</option>
+                            <option value="6" ${pitch.zone === '6' ? 'selected' : ''}>6</option>
+                            <option value="7" ${pitch.zone === '7' ? 'selected' : ''}>7</option>
+                            <option value="8" ${pitch.zone === '8' ? 'selected' : ''}>8</option>
+                            <option value="9" ${pitch.zone === '9' ? 'selected' : ''}>9</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        `;
+        container.append(cardHtml);
+    });
+    
+    // Add theme-specific border color
+    container.find('.seq-pitch-card').css('border-color', $('body').hasClass('dark-mode') ? 'var(--border-color-dark)' : 'var(--border-color-light)');
+    
+    // Update current pitch label
+    let nextNum = precedingPitches.length + 1;
+    let labelText = `Current Pitch: <b>#${nextNum}</b>`;
+    if (nextNum === 1) {
+        labelText += " (First Pitch)";
+    }
+    $('#currentPitchNumberLabel').html(labelText);
+}
+
+var currentBatterStats = null;
+var currentPitcherStats = null;
+
+function updateMatchupDashboard() {
+    let batter = $('#selectBatter').val();
+    let pitcher = $('#selectPitcher').val();
+    let pitchType = $('#selectPitchType').val();
+    
+    // Show/hide Strictly Head-to-Head filter checkbox container
+    if (batter && batter !== 'League Average') {
+        $('#headToHeadToggleContainer').show();
+        if ($('#checkHeadToHead').attr('data-user-set') !== 'true') {
+            $('#checkHeadToHead').prop('checked', true);
+        }
+    } else {
+        $('#headToHeadToggleContainer').hide();
+        $('#checkHeadToHead').prop('checked', false);
+        $('#checkHeadToHead').attr('data-user-set', 'false');
+    }
+
+    // Hide panel and clear metrics if average/empty matchups are selected
+    let isBatterAvg = !batter || batter === 'League Average';
+    let isPitcherAvg = !pitcher || pitcher === 'League Average';
+    if (isBatterAvg && isPitcherAvg) {
+        $('#matchup-dashboard').hide();
+        currentBatterStats = null;
+        currentPitcherStats = null;
+        renderRepertoire(null);
+        $('#platoon-indicator').html('');
+        $('#batter-adv-stats').empty();
+        $('#pitcher-adv-stats').empty();
+        $('#velocity-diff-indicator').empty();
+        return;
+    }
+    
+    $('#matchup-dashboard').show();
+    
+    // Load batter stats if changed
+    let batterPromise = $.Deferred();
+    if (batter && batter !== 'League Average') {
+        $.get(`${baseApiUrl}/player-stats?player=${encodeURIComponent(batter)}&type=batter`)
+            .done(data => {
+                currentBatterStats = data.stats;
+                batterPromise.resolve();
+            })
+            .fail(() => {
+                currentBatterStats = null;
+                batterPromise.resolve();
+            });
+    } else {
+        currentBatterStats = null;
+        batterPromise.resolve();
+    }
+    
+    // Load pitcher stats if changed
+    let pitcherPromise = $.Deferred();
+    if (pitcher && pitcher !== 'League Average') {
+        $.get(`${baseApiUrl}/player-stats?player=${encodeURIComponent(pitcher)}&type=pitcher`)
+            .done(data => {
+                currentPitcherStats = data.stats;
+                renderRepertoire(data.repertoire);
+                pitcherPromise.resolve();
+            })
+            .fail(() => {
+                currentPitcherStats = null;
+                renderRepertoire(null);
+                pitcherPromise.resolve();
+            });
+    } else {
+        currentPitcherStats = null;
+        renderRepertoire(null);
+        pitcherPromise.resolve();
+    }
+    
+    Promise.all([batterPromise, pitcherPromise]).then(() => {
+        // 1. Platoon Advantage
+        let stand = $('#selectStand').val();
+        let p_throws = $('#selectPThrows').val();
+        if (stand && p_throws) {
+            let hasAdvantage = (stand !== p_throws);
+            $('#platoon-indicator')
+                .html(hasAdvantage 
+                    ? `<span class="platoon-yes">🟢 Platoon Advantage: Yes</span> (${stand}HB vs ${p_throws}HP)`
+                    : `<span style="color: var(--text-secondary-dark);">⚪ Platoon Advantage: No</span> (${stand}HB vs ${p_throws}HP)`);
+        } else {
+            $('#platoon-indicator').html('');
+        }
+        
+        // 2. Batter details
+        if (currentBatterStats) {
+            let hardHit = currentBatterStats['HardHit%'] !== undefined ? `${(parseFloat(currentBatterStats['HardHit%']) * 100).toFixed(1)}%` : 'N/A';
+            let barrel = currentBatterStats['Barrel%'] !== undefined ? `${(parseFloat(currentBatterStats['Barrel%']) * 100).toFixed(1)}%` : 'N/A';
+            let contact = currentBatterStats['Contact%'] !== undefined ? `${(parseFloat(currentBatterStats['Contact%']) * 100).toFixed(1)}%` : 'N/A';
+            let oswing = currentBatterStats['O-Swing%'] !== undefined ? `${(parseFloat(currentBatterStats['O-Swing%']) * 100).toFixed(1)}%` : 'N/A';
+            
+            $('#batter-adv-stats').html(`
+                wOBA: <b>${parseFloat(currentBatterStats.wOBA || 0).toFixed(3)}</b><br/>
+                Hard Hit: <b>${hardHit}</b><br/>
+                Barrel: <b>${barrel}</b><br/>
+                Contact: <b>${contact}</b><br/>
+                Chase (O-Swing): <b>${oswing}</b>
+            `);
+        } else {
+            $('#batter-adv-stats').html('League Averages');
+        }
+        
+        // 3. Pitcher details
+        if (currentPitcherStats) {
+            let fip = currentPitcherStats.FIP !== undefined ? parseFloat(currentPitcherStats.FIP).toFixed(2) : 'N/A';
+            let xfip = currentPitcherStats.xFIP !== undefined ? parseFloat(currentPitcherStats.xFIP).toFixed(2) : 'N/A';
+            let xera = currentPitcherStats.xERA !== undefined ? parseFloat(currentPitcherStats.xERA).toFixed(2) : 'N/A';
+            let swstr = currentPitcherStats['SwStr%'] !== undefined ? `${(parseFloat(currentPitcherStats['SwStr%']) * 100).toFixed(1)}%` : 'N/A';
+            
+            $('#pitcher-adv-stats').html(`
+                ERA: <b>${parseFloat(currentPitcherStats.ERA || 0).toFixed(2)}</b><br/>
+                xFIP: <b>${xfip}</b><br/>
+                xERA: <b>${xera}</b><br/>
+                SwStr: <b>${swstr}</b><br/>
+                FIP: <b>${fip}</b>
+            `);
+        } else {
+            $('#pitcher-adv-stats').html('League Averages');
+        }
+        
+        // 4. Velocity Differential
+        let currentSpeed = parseFloat($('#valReleaseSpeed').val());
+        if (currentPitcherStats && currentPitcherStats.FB_velocity && pitchType) {
+            let fbSpeed = parseFloat(currentPitcherStats.FB_velocity);
+            let diff = currentSpeed - fbSpeed;
+            let diffStr = diff > 0 ? `+${diff.toFixed(1)}` : diff.toFixed(1);
+            let color = diff < -5 ? 'var(--primary-accent-light)' : (diff > 2 ? '#39ff14' : 'var(--text-secondary-dark)');
+            $('#velocity-diff-indicator').html(
+                `Vs. Pitcher's Fastball avg (<b>${fbSpeed.toFixed(1)} mph</b>): <span style="color: ${color}; font-weight: bold;">${diffStr} mph</span>`
+            );
+        } else {
+            $('#velocity-diff-indicator').html('');
+        }
+    });
+}
+
 $(document).ready(function() {
     // Initialize with empty heatmap
     drawChartElements([], {});
@@ -609,22 +1565,29 @@ $(document).ready(function() {
     // Load rosters from new backend
     $.get(`${baseApiUrl}/rosters`)
         .done(data => {
-            // Store batter stances for auto-population
+            // Store batter stances, pitcher throws, and player IDs for auto-population & filtering
             batterStances = data.batter_stances || {};
+            pitcherThrows = data.pitcher_throws || {};
+            batterIds = data.batter_ids || {};
+            pitcherIds = data.pitcher_ids || {};
+
 
             // Populate batter dropdown
             $('#selectBatter').append(new Option('League Average', ''));
-            $.each(data.batters, (i, name) => $('#selectBatter').append(new Option(name, name)));
+            $.each(data.batters, (i, b) => $('#selectBatter').append(new Option(b.display_name, b.name)));
 
             // Populate pitcher dropdown
             $('#selectPitcher').append(new Option('League Average', ''));
-            $.each(data.pitchers, (i, name) => $('#selectPitcher').append(new Option(name, name)));
+            $.each(data.pitchers, (i, p) => $('#selectPitcher').append(new Option(p.display_name, p.name)));
+
 
             // Set default pitch types
             setPitchTypes(['FF', 'SI', 'SL', 'CH', 'CU', 'FC']);
 
             // Initial load
             loadPitchProfile();
+            updateMatchupDashboard();
+            loadMatchupAtBats();
             updateVisuals();
         })
         .fail(function(xhr, status, error) {
@@ -632,23 +1595,136 @@ $(document).ready(function() {
             alert('Failed to connect to backend. Please ensure the backend is running on port 5001.');
         });
     
-    $('#selectPitcher, #selectPitchType').on("change", function() {
+    // Initialize sequence timeline rendering
+    renderSequencePitches();
+
+    // Add pitch to sequence
+    $('#btnAddSeqPitch').on('click', function() {
+        let currentType = $('#selectPitchType').val() || 'FF';
+        let currentSpeed = parseFloat($('#valReleaseSpeed').val()) || 90.0;
+        
+        precedingPitches.push({
+            type: currentType,
+            speed: currentSpeed,
+            zone: '5'
+        });
+        
+        renderSequencePitches();
+        updateVisuals();
+    });
+
+    // Remove pitch from sequence
+    $(document).on('click', '.btn-remove-seq', function() {
+        let idx = parseInt($(this).attr('data-index'));
+        precedingPitches.splice(idx, 1);
+        renderSequencePitches();
+        updateVisuals();
+    });
+
+    // Change sequence pitch type
+    $(document).on('change', '.seq-type-select', function() {
+        let idx = parseInt($(this).attr('data-index'));
+        precedingPitches[idx].type = $(this).val();
+        renderSequencePitches();
+        updateVisuals();
+    });
+
+    // Change sequence pitch zone
+    $(document).on('change', '.seq-zone-select', function() {
+        let idx = parseInt($(this).attr('data-index'));
+        precedingPitches[idx].zone = $(this).val();
+        updateVisuals();
+    });
+
+    // Change sequence pitch speed
+    $(document).on('input change', '.seq-speed-range', function() {
+        let idx = parseInt($(this).attr('data-index'));
+        let val = parseFloat($(this).val());
+        precedingPitches[idx].speed = val;
+        $(this).closest('.seq-pitch-card').find('.seq-speed-label').text(val.toFixed(1) + ' mph');
+        updateVisuals();
+    });
+
+    function resetSituationalContext() {
+        // 1. Reset pitch sequence simulator
+        precedingPitches = [];
+        renderSequencePitches();
+
+        // 2. Reset count & base runners
+        $('#valBalls').val('0');
+        $('#valStrikes').val('0');
+        $('#valOuts').val('0');
+        $('#checkOn1b').prop('checked', false);
+        $('#checkOn2b').prop('checked', false);
+        $('#checkOn3b').prop('checked', false);
+
+        // 3. Reset game state
+        $('#valInning').val('1');
+        $('#valNThruorderPitcher').val('1');
+
+        // 4. Reset selected zone highlight & readout
+        selectedZone = null;
+        d3.selectAll('.heatmap_zone').classed('selected', false);
+        $('#hitProbability').text('Click a zone for its probability');
+
+        // 5. Reset historical at-bat replay state
+        currentAtBatPitches = [];
+        activeReplayPitchIndex = null;
+        $('#selectMatchupAtBat').val('');
+        $('#atBatTimelineContainer').hide();
+        $('#replayDetailsBox').empty();
+    }
+
+    $('#selectPitcher').on("change", function() {
+        resetSituationalContext();
+        let pitcher = $('#selectPitcher').val();
+        if (pitcher && pitcher !== 'League Average' && pitcherThrows[pitcher]) {
+            let throws = pitcherThrows[pitcher];
+            $('#selectPThrows').val(throws);
+            $('#selectPThrows').prop('disabled', true);
+            $('#selectPThrows').attr('title', `${pitcher} throws ${throws === 'R' ? 'right' : 'left'}-handed`);
+
+            // If current batter is a switch hitter, update stance to opposite of pitcher throw
+            let batter = $('#selectBatter').val();
+            if (batter && batter !== 'League Average' && batterStances[batter] === 'S') {
+                let switchStance = (throws === 'R') ? 'L' : 'R';
+                $('#selectStand').val(switchStance);
+            }
+        } else {
+            // League Average or unknown pitcher - allow manual selection
+            $('#selectPThrows').prop('disabled', false);
+            $('#selectPThrows').attr('title', 'Select pitcher throwing hand manually');
+        }
+
         loadPitchProfile();
+        updateMatchupDashboard();
+        loadMatchupAtBats();
+        updateVisuals();
+    });
+    $('#selectPitchType').on("change", function() {
+        loadPitchProfile();
+        updateMatchupDashboard();
         updateVisuals();
     });
     $('#selectBatter').on("change", function() {
-        // Auto-populate batter stance when batter is selected
+        resetSituationalContext();
+        // Reset manual override so new batter defaults to Head-to-Head
+        $('#checkHeadToHead').attr('data-user-set', 'false');
         let batter = $('#selectBatter').val();
+        if (batter && batter !== 'League Average') {
+            $('#checkHeadToHead').prop('checked', true);
+        }
 
         if (batter && batter !== 'League Average' && batterStances[batter]) {
             let stance = batterStances[batter];
 
             // Handle switch hitters: 'S' means they can bat from either side
             if (stance === 'S') {
-                // Default to right-handed for switch hitters but allow changing
-                $('#selectStand').val('R');
+                let p_throws = $('#selectPThrows').val() || 'R';
+                let switchStance = (p_throws === 'R') ? 'L' : 'R';
+                $('#selectStand').val(switchStance);
                 $('#selectStand').prop('disabled', false);
-                $('#selectStand').attr('title', `${batter} is a switch hitter - you can change stance`);
+                $('#selectStand').attr('title', `${batter} is a switch hitter - defaults to ${switchStance} against ${p_throws}HP`);
             } else {
                 // Non-switch hitter: lock to their natural stance
                 $('#selectStand').val(stance);
@@ -660,10 +1736,85 @@ $(document).ready(function() {
             $('#selectStand').prop('disabled', false);
             $('#selectStand').attr('title', 'Select batter stance manually');
         }
+        updateMatchupDashboard();
+        loadMatchupAtBats();
         updateVisuals();
     });
-    $('.controls').on('change', 'select:not(#selectPitcher, #selectPitchType, #selectBatter), input[type=checkbox], input[type=number]', () => updateVisuals());
-    $('.controls').on('change', 'input[type=range]', () => updateVisuals());
+
+    // Handle matchup at-bat selection change
+    $('#selectMatchupAtBat').on('change', function() {
+        let val = $(this).val();
+        if (!val) {
+            $('#atBatTimelineContainer').hide();
+            currentAtBatPitches = [];
+            activeReplayPitchIndex = null;
+            // Redraw heatmap zones and historical dots without the replay overlay
+            drawChartElements(currentPitchingData, curZoneProbs);
+            return;
+        }
+        
+        let parts = val.split('|');
+        let gameDate = parts[0];
+        let inning = parts[1];
+        let outs = parts[2];
+        
+        let pitcher = $('#selectPitcher').val();
+        let batter = $('#selectBatter').val();
+        let pitcherId = pitcherIds[pitcher];
+        let batterId = batterIds[batter];
+        
+        $.get(`${baseApiUrl}/stats/at-bat-pitches?pitcher_id=${pitcherId}&batter_id=${batterId}&game_date=${gameDate}&inning=${inning}&outs_when_up=${outs}`)
+            .done(function(pitches) {
+                currentAtBatPitches = pitches;
+                activeReplayPitchIndex = null;
+                
+                // Show timeline area
+                $('#atBatTimelineContainer').show();
+                
+                // Render pitch selection buttons
+                let timeline = $('#atBatPitchesTimeline');
+                timeline.empty();
+                pitches.forEach((p, idx) => {
+                    let btn = $('<button>')
+                        .attr('type', 'button')
+                        .attr('id', `btn-pitch-${idx}`)
+                        .addClass('timeline-btn')
+                        .text(`Pitch ${idx + 1}`)
+                        .on('click', function() {
+                            selectAtBatPitch(idx);
+                        });
+                    timeline.append(btn);
+                });
+                
+                // Open parent detail tag if closed
+                $('#matchupReplayPanel').prop('open', true);
+                
+                // Automatically select first pitch
+                if (pitches.length > 0) {
+                    selectAtBatPitch(0);
+                }
+            })
+            .fail(function(xhr, status, error) {
+                console.error("Failed to load pitches for at-bat:", error);
+            });
+    });
+
+    // Listeners for advanced dashboard updates on controls changes
+    $('#selectStand, #selectPThrows').on("change", function() {
+        updateMatchupDashboard();
+    });
+    $('#valReleaseSpeed').on('input change', function() {
+        updateMatchupDashboard();
+    });
+
+    $('.controls').on('change', 'select:not(#selectPitcher, #selectPitchType, #selectBatter), input[type=checkbox], input[type=number]', () => {
+        updateMatchupDashboard();
+        updateVisuals();
+    });
+    $('.controls').on('change', 'input[type=range]', () => {
+        updateMatchupDashboard();
+        updateVisuals();
+    });
     $('.controls').on('input', 'input[type=range]', updateAllSliderOutputs);
 
     $('#outcome-legend').on('change', 'input, select', function() {
@@ -682,13 +1833,18 @@ $(document).ready(function() {
         drawChartElements(currentPitchingData, curZoneProbs);
     });
 
+    $(document).on('change', '#checkHeadToHead', function() {
+        $(this).attr('data-user-set', 'true');
+        drawChartElements(currentPitchingData, curZoneProbs);
+    });
+
     // Handle window resize for responsive visualization
     let resizeTimeout;
     $(window).on('resize', function() {
         clearTimeout(resizeTimeout);
         resizeTimeout = setTimeout(function() {
             // Recalculate dimensions
-            containerWidth = Math.min(window.innerWidth * 0.9, 1200);
+            containerWidth = Math.max(350, Math.min(650, window.innerWidth - 550));
             width = containerWidth - margin.left - margin.right;
             height = containerWidth - margin.top - margin.bottom;
             // Redraw chart with new dimensions

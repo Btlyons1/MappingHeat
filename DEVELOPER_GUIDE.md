@@ -1,20 +1,18 @@
-# Mapping Heat - Developer Guide
+# Mapping Heat Developer Guide
 
 ## Table of Contents
-1. [Architecture Overview](#architecture-overview)
+1. [System Overview](#system-overview)
 2. [Project Structure](#project-structure)
 3. [Key Components](#key-components)
 4. [Data Pipeline](#data-pipeline)
-5. [Adding New Features](#adding-new-features)
-6. [Common Tasks](#common-tasks)
-7. [API Reference](#api-reference)
-8. [Troubleshooting](#troubleshooting)
+5. [API Reference](#api-reference)
+6. [Troubleshooting](#troubleshooting)
 
 ---
 
-## Architecture Overview
+## System Overview
 
-Mapping Heat is a baseball pitch prediction application with three main components:
+Mapping Heat is composed of three primary layers:
 
 ```
 ┌─────────────────┐      ┌─────────────────┐      ┌─────────────────┐
@@ -27,18 +25,17 @@ Mapping Heat is a baseball pitch prediction application with three main componen
         │                        │                        │
         ▼                        ▼                        ▼
   User Interface          SQLite Database         Trained Artifacts
-  - Zone selection        - Historical pitches    - Model weights
-  - Probability viz       - Player stats          - Encoders
-  - Pitch filtering                               - League averages
-  - Matchups                                             
+  (Zone selection,        (Historical pitches,    (Model weights,
+   probability viz,        player stats)           encoders, league
+   pitch filtering)                                averages)
 ```
 
 ### Technology Stack
 
-- **Frontend**: Vanilla JavaScript, D3.js for visualizations, jQuery for AJAX
-- **Backend**: Python Flask, SQLite for data storage
-- **ML Pipeline**: pandas, pybaseball, LightGBM, scikit-learn
-- **Deployment**: Docker, docker-compose
+- Frontend: Vanilla JavaScript, D3.js for visual rendering, jQuery for HTTP requests.
+- Backend: Python Flask REST server with an SQLite database for pitch history.
+- Pipeline: Data processing with pandas, pybaseball, LightGBM, and scikit-learn.
+- Deployment: Docker containerization managed via docker-compose.
 
 ---
 
@@ -47,31 +44,31 @@ Mapping Heat is a baseball pitch prediction application with three main componen
 ```
 MapppingHeat/
 ├── backend/
-│   ├── app.py                 # Flask API server
-│   ├── model.py               # ML model wrapper & prediction logic
-│   ├── pipeline.py            # Data fetching & model training pipeline
-│   ├── db.py                  # Database initialization & queries
-│   ├── stats.py               # Statistical calculations
-│   ├── schema.sql             # Database schema
+│   ├── app.py                 # Flask API server and endpoint definitions
+│   ├── model.py               # Model wrapper and inference logic
+│   ├── pipeline.py            # Data fetching and model training pipeline
+│   ├── db.py                  # Database initialization and SQL queries
+│   ├── stats.py               # Statistical calculations and matchup blueprints
+│   ├── schema.sql             # Database table structure
 │   ├── requirements.txt       # Python dependencies
-│   ├── Dockerfile            # Backend container config
-│   └── artifacts/            # Generated model artifacts
+│   ├── Dockerfile             # Backend container configuration
+│   └── artifacts/             # Generated model artifacts and player profiles
 │       ├── lgbm_model.pkl
 │       ├── batters.json
 │       ├── pitchers.json
 │       ├── batter_stances.json
 │       ├── pitcher_pitch_profiles.json
+│       ├── pitcher_repertoire.json
 │       └── league_averages.json
 │
 ├── frontend/
-│   └── index.html            # Single-page application
+│   ├── index.html             # D3.js single-page application interface
+│   ├── nginx.conf             # Web server reverse proxy configuration
+│   └── Dockerfile             # Frontend container configuration
 │
-├── model/
-│   └── new_model_batters.ipynb  # Model development notebook
-│
-├── docker-compose.yml        # Multi-container orchestration
-├── Makefile                  # Common development tasks
-└── .env.example             # Environment variables template
+├── gifs/                      # User interface demonstration animations
+├── docker-compose.yml         # Container orchestrator configuration
+└── Makefile                   # Utility commands for development tasks
 ```
 
 ---
@@ -80,424 +77,76 @@ MapppingHeat/
 
 ### 1. Pipeline (`backend/pipeline.py`)
 
-**Purpose**: Fetches baseball data, processes it, trains the model, and generates artifacts.
+Downloads Statcast pitch data, processes features, trains the LightGBM model, and exports model artifacts.
 
-**Main Class**: `MappingHeatPipeline`
+Main Class: `MappingHeatPipeline`
 
-**Key Methods**:
+Key Methods:
+- `fetch_season_stats(years)`: Downloads player batting and pitching season statistics from FanGraphs.
+- `fetch_statcast_bulk()`: Downloads pitch kinematics and outcomes from MLB Statcast.
+- `fetch_id_mapping()`: Maps player identifiers between MLBAM IDs and FanGraphs IDs.
+- `merge_context()`: Combines pitch data with player season statistics.
+- `engineer_features()`: Generates count context, physics interaction, sequence, and player profile features.
+- `train_model()`: Trains the LightGBM classifier with unweighted class distribution to preserve calibration.
+- `calculate_pitch_profiles()`: Calculates average velocity, movement, and release point characteristics per pitcher.
+- `save_artifacts()`: Exports model weights, encoders, rosters, profiles, and league averages.
 
-- `fetch_season_stats(years)` - Downloads batting/pitching stats from Fangraphs
-- `fetch_statcast_bulk()` - Downloads pitch-level data from MLB Statcast
-- `fetch_id_mapping()` - Maps player IDs between systems (MLBAM ↔ Fangraphs)
-- `merge_context()` - Joins pitch data with player season stats
-- `engineer_features()` - Creates model features and target variable
-- `train_model()` - Trains LightGBM classifier
-- `calculate_pitch_profiles()` - Computes average pitch characteristics per pitcher
-- `save_artifacts()` - Exports model, rosters, stances, profiles, averages
+### 2. Inference Engine (`backend/model.py`)
 
-**When to modify**:
-- Adding new data sources
-- Changing feature engineering
-- Updating model hyperparameters
-- Adding new artifact exports
+Loads artifacts from disk and computes live hit probabilities.
 
-**Example - Adding a new feature**:
-```python
-# In engineer_features() method:
-def engineer_features(self, df: pd.DataFrame) -> pd.DataFrame:
-    # ... existing code ...
+Main Class: `MappingHeatModel`
 
-    # Add your new feature
-    df['my_new_feature'] = df['existing_col1'] * df['existing_col2']
+Key Methods:
+- `load_artifacts()`: Reads trained LightGBM models, encoders, and JSON configuration files.
+- `get_batter_stats(name)`: Retrieves batter profile metrics, falling back to league average defaults when unlisted.
+- `get_pitcher_stats(name)`: Retrieves pitcher profile metrics, falling back to league average defaults when unlisted.
+- `predict(pitch_data, batter, pitcher)`: Constructs feature vectors and calculates hit probability.
 
-    return df
-```
+### 3. API Server (`backend/app.py`)
 
----
+Flask application exposing endpoints for predictions, rosters, and player profiles.
 
-### 2. Model (`backend/model.py`)
+Key Endpoints:
+- `/rosters`: Returns rosters, stances, and player ID mappings.
+- `/predict`: Calculates hit probability for a specific pitch scenario.
+- `/pitch-profile`: Returns average pitch characteristics for a pitcher.
+- `/player-stats`: Returns player statistics and pitch mix repertoire percentages.
 
-**Purpose**: Loads trained artifacts and makes predictions.
+### 4. Database Layer (`backend/db.py` and `backend/stats.py`)
 
-**Main Class**: `MappingHeatModel`
+SQLite connection management and querying for historical pitch history.
 
-**Key Methods**:
-
-- `load_model()` - Loads LightGBM model and label encoders
-- `load_rosters()` - Loads batters, pitchers, stances from JSON
-- `get_batter_stats(name)` - Retrieves batter stats or league average
-- `get_pitcher_stats(name)` - Retrieves pitcher stats or league average
-- `predict(pitch_data, batter, pitcher)` - Returns hit probability
-
-**When to modify**:
-- Adding new player stats to prediction
-- Changing fallback logic for missing players
-- Adding prediction confidence intervals
-- Implementing new prediction endpoints
-
-**Example - Adding a new stat to predictions**:
-```python
-# In predict() method:
-def predict(self, pitch_data: Dict, batter_name: Optional[str] = None, ...):
-    # ... existing code ...
-
-    # Add new stat
-    batter_stats = self.get_batter_stats(batter_name)
-    features['batter_new_stat'] = batter_stats.get('NewStat', 0.0)
-
-    # Make sure to train the model with this feature in pipeline.py!
-```
-
----
-
-### 3. API (`backend/app.py`)
-
-**Purpose**: Flask REST API exposing model predictions and data.
-
-**Key Endpoints**:
-
-| Endpoint | Method | Purpose |
-|----------|--------|---------|
-| `/rosters` | GET | Returns batters, pitchers, batter_stances |
-| `/predict` | POST | Predicts hit probability for pitch scenario |
-| `/pitch-profile` | GET | Returns pitcher's average pitch characteristics |
-| `/stats/pitcher` | GET | Returns historical pitches for a pitcher |
-| `/player-stats` | GET | Returns player stats (batter or pitcher) |
-
-**When to modify**:
-- Adding new API endpoints
-- Changing response formats
-- Adding authentication
-- Implementing caching
-
-**Example - Adding a new endpoint**:
-```python
-@app.route('/team-stats', methods=['GET'])
-def get_team_stats():
-    """Get aggregated stats for a team."""
-    team_name = request.args.get('team')
-
-    # Your logic here
-    team_data = calculate_team_stats(team_name)
-
-    return jsonify({
-        'team': team_name,
-        'stats': team_data
-    })
-```
-
----
-
-### 4. Database (`backend/db.py`)
-
-**Purpose**: SQLite database management for historical pitch data.
-
-**Key Functions**:
-
-- `get_db_connection()` - Returns SQLite connection
-- `init_db()` - Creates schema and loads CSV data
-- `query_pitcher_pitches(name)` - Gets all pitches for a pitcher
-- `query_pitcher_names()` - Lists all pitchers in database
-- `query_batter_stances()` - Gets batter stance mappings
-
-**When to modify**:
-- Adding new database tables
-- Creating new query functions
-- Optimizing database indexes
-
-**Example - Adding a new query**:
-```python
-def query_batter_pitches(batter_name: str):
-    """Query all pitches faced by a specific batter."""
-    conn = get_db_connection()
-    try:
-        cursor = conn.execute(
-            "SELECT * FROM pitching_data WHERE batter_name = ? ORDER BY game_date DESC",
-            (batter_name,)
-        )
-        return [dict(row) for row in cursor.fetchall()]
-    finally:
-        conn.close()
-```
-
----
-
-### 5. Frontend (`frontend/index.html`)
-
-**Purpose**: Interactive visualization and user interface.
-
-**Key JavaScript Functions**:
-
-- `loadPitchProfile()` - Loads pitcher's pitch characteristics
-- `updateVisuals(zone)` - Requests predictions from API
-- `drawChartElements(pitches, probs)` - Renders strike zone heatmap and pitch dots
-- `filterPitchDots()` - Filters visible pitches by outcome and year
-- `getOutcomeCategory(d)` - Categorizes pitch outcomes (Hit/Out/Strike/Ball)
-
-**Key UI Elements**:
-
-- Strike zone with 14 zones (1-9 in zone, 11-14 outside)
-- Historical pitch dots colored by outcome
-- Heatmap showing hit probabilities
-- Control panel with pitch/situation inputs
-- Outcome filters and year selector
-
-**When to modify**:
-- Adding new visualizations
-- Changing UI layout
-- Adding new controls
-- Implementing new filtering options
-
-**Example - Adding a new filter**:
-```javascript
-// In HTML:
-<select id="inningFilter">
-    <option value="all">All Innings</option>
-    <option value="early">1-3</option>
-    <option value="middle">4-6</option>
-    <option value="late">7-9</option>
-</select>
-
-// In JavaScript:
-function filterPitchDots() {
-    let selectedInning = $('#inningFilter').val();
-
-    svg.selectAll('.pitch-dot').style('display', function(d) {
-        let inningMatch = true;
-        if (selectedInning === 'early') {
-            inningMatch = d.inning <= 3;
-        } else if (selectedInning === 'middle') {
-            inningMatch = d.inning >= 4 && d.inning <= 6;
-        } else if (selectedInning === 'late') {
-            inningMatch = d.inning >= 7;
-        }
-
-        return inningMatch ? '' : 'none';
-    });
-}
-```
+Key Functions:
+- `get_db_connection()`: Creates an SQLite database connection.
+- `init_db()`: Initializes table schema and loads Statcast CSV data.
+- `query_pitcher_pitches(name)`: Retrieves historical pitch records for a pitcher.
+- `query_pitcher_pitches_by_id(pitcher_id)`: Retrieves historical pitch records using an MLBAM ID.
 
 ---
 
 ## Data Pipeline
 
-### Pipeline Flow
-
 ```
-1. Fetch Season Stats (Fangraphs)
-   ├── Batting stats (wOBA, OBP, SLG, BB%, K%)
-   └── Pitching stats (FIP, ERA, WHIP, K/9, BB/9)
+1. Fetch Season Stats (FanGraphs)
+   ├── Batting stats (wOBA, OBP, SLG, BB%, K%, ISO, HardHit%, Barrel%)
+   └── Pitching stats (FIP, ERA, WHIP, K/9, BB/9, xFIP, xERA, SwStr%)
 
 2. Fetch Player ID Mappings (Chadwick)
-   └── Map MLBAM IDs ↔ Fangraphs IDs
+   └── Map MLBAM IDs to FanGraphs IDs
 
-3. Fetch Statcast Data (MLB)
-   ├── Pitch-level data (velocity, movement, location)
-   └── Chunked by month to avoid timeouts
+3. Fetch Statcast Pitch Data (MLB)
+   └── Download pitch velocity, movement, location, and results
 
-4. Merge Data
-   ├── Join pitch data with season stats via IDs
-   └── Calculate league averages
+4. Merge Context & Feature Engineering
+   ├── Join pitch records with player metrics
+   ├── Calculate count context (hitter's count, pitcher's count, leverage, two strikes)
+   ├── Calculate physics interactions (speed x location, speed x height, velocity differential)
+   └── Calculate sequence metrics (pitch distance delta, speed delta from prior pitch)
 
-5. Feature Engineering
-   ├── Create target variable (Hit vs Out)
-   ├── Fill missing values
-   └── Encode categorical variables
-
-6. Train Model
-   ├── LightGBM classifier
-   └── 80/20 train/test split
-
-7. Generate Artifacts
-   ├── Model & encoders (lgbm_model.pkl)
-   ├── Rosters (batters.json, pitchers.json)
-   ├── Batter stances (batter_stances.json)
-   ├── Pitch profiles (pitcher_pitch_profiles.json)
-   └── League averages (league_averages.json)
+5. Train LightGBM Model & Export Artifacts
+   └── Save model weights (lgbm_model.pkl), profiles, repertoires, and rosters
 ```
-
-### Running the Pipeline
-
-```bash
-# Basic run (uses default dates in pipeline.py)
-python backend/pipeline.py
-
-# Or modify dates in pipeline.py main block:
-pipeline = MappingHeatPipeline(
-    start_date="2024-04-01",  # Start of season
-    end_date="2024-10-31",     # End of season
-    output_dir="artifacts"
-)
-```
-
-### Pipeline Caching
-
-The pipeline caches intermediate results to speed up re-runs:
-
-- **Season stats**: `cache/season_stats_{start_year}_{end_year}.pkl`
-- **ID mappings**: `cache/id_mapping.pkl`
-- **Statcast data**: `cache/statcast_{start_date}_to_{end_date}.pkl`
-
-To force fresh data, delete the cache files:
-```bash
-rm -rf backend/cache/
-```
-
----
-
-## Adding New Features
-
-### 1. Adding a New Player Stat
-
-**Step 1**: Update pipeline to include the stat
-```python
-# In pipeline.py, modify batter_cols_to_keep or pitcher_cols_to_keep
-batter_cols_to_keep = [
-    'batter_fg_id', 'year', 'wOBA', 'OBP', 'SLG', 'BB%', 'K%',
-    'ISO', 'BABIP', 'MyNewStat'  # Add here
-]
-```
-
-**Step 2**: Update model to use the stat
-```python
-# In model.py, add to get_batter_stats() or get_pitcher_stats()
-return {
-    'wOBA': ...,
-    'MyNewStat': self.league_averages.get('batter_MyNewStat', 0.0)
-}
-
-# In predict(), add feature
-features['batter_MyNewStat'] = batter_stats.get('MyNewStat', 0.0)
-```
-
-**Step 3**: Re-train model
-```bash
-python backend/pipeline.py
-```
-
----
-
-### 2. Adding a New Visualization
-
-**Step 1**: Add HTML controls
-```html
-<div class="input-group">
-    <label for="myNewControl">My Feature:</label>
-    <select id="myNewControl">
-        <option value="option1">Option 1</option>
-        <option value="option2">Option 2</option>
-    </select>
-</div>
-```
-
-**Step 2**: Add JavaScript logic
-```javascript
-// Add event listener
-$('#myNewControl').on('change', function() {
-    updateMyVisualization();
-});
-
-function updateMyVisualization() {
-    let value = $('#myNewControl').val();
-
-    // Update D3 visualization
-    svg.selectAll('.my-elements')
-        .data(myData)
-        .enter()
-        .append('circle')
-        .attr('cx', d => x(d.x))
-        .attr('cy', d => y(d.y))
-        // ... more D3 code
-}
-```
-
----
-
-### 3. Adding a New API Endpoint
-
-**Step 1**: Define endpoint in app.py
-```python
-@app.route('/my-endpoint', methods=['GET', 'POST'])
-def my_endpoint():
-    """
-    Description of what this endpoint does.
-
-    Args (via query params or JSON body):
-        param1: Description
-        param2: Description
-
-    Returns:
-        JSON response with data
-    """
-    try:
-        # Get parameters
-        param1 = request.args.get('param1') if request.method == 'GET' else request.json.get('param1')
-
-        # Your logic
-        result = process_data(param1)
-
-        return jsonify({
-            'success': True,
-            'data': result
-        })
-    except Exception as e:
-        logger.error(f"Error in my_endpoint: {e}")
-        return jsonify({'error': str(e)}), 500
-```
-
-**Step 2**: Call from frontend
-```javascript
-$.get(`${baseApiUrl}/my-endpoint?param1=value`, function(data) {
-    console.log('Got data:', data);
-    updateUI(data);
-});
-```
-
----
-
-## Common Tasks
-
-### Updating the Model
-
-1. Modify training logic in [pipeline.py](backend/pipeline.py)
-2. Run pipeline: `python backend/pipeline.py`
-3. Restart backend: `docker-compose restart backend`
-
-### Adding a New Batter/Pitcher
-
-Batters and pitchers are automatically added when you re-run the pipeline with updated data. To add manually:
-
-1. Edit [batters.json](backend/artifacts/batters.json) or [pitchers.json](backend/artifacts/pitchers.json)
-2. Add entry with required stats
-3. Restart: `docker-compose restart backend`
-
-### Changing Date Range
-
-Edit [pipeline.py](backend/pipeline.py):
-```python
-pipeline = MappingHeatPipeline(
-    start_date="2024-04-01",  # Change these
-    end_date="2024-10-31",
-    output_dir="artifacts"
-)
-```
-
-### Debugging the Frontend
-
-1. Open browser DevTools (F12)
-2. Check Console for JavaScript errors
-3. Check Network tab for API calls
-4. Use `console.log()` for debugging (remove before commit)
-
-### Debugging the Backend
-
-1. Check Docker logs: `docker-compose logs backend`
-2. Add logging: `logger.info("Debug message")`
-3. For interactive debugging, run outside Docker:
-   ```bash
-   cd backend
-   python app.py
-   ```
 
 ---
 
@@ -505,18 +154,16 @@ pipeline = MappingHeatPipeline(
 
 ### GET /rosters
 
-Returns lists of available batters and pitchers.
+Returns available batters and pitchers along with stance classifications and ID mappings.
 
-**Response**:
+Response:
 ```json
 {
-  "batters": ["Aaron Judge", "Shohei Ohtani", ...],
-  "pitchers": ["Gerrit Cole", "Sandy Alcantara", ...],
-  "batter_stances": {
-    "Aaron Judge": "R",
-    "Shohei Ohtani": "L",
-    "Switch Hitter": "S"
-  }
+  "batters": [{"name": "Aaron Judge", "display_name": "Judge, Aaron"}],
+  "pitchers": [{"name": "Gerrit Cole", "display_name": "Cole, Gerrit"}],
+  "batter_stances": { "Aaron Judge": "R" },
+  "batter_ids": { "Aaron Judge": 592450 },
+  "pitcher_ids": { "Gerrit Cole": 543037 }
 }
 ```
 
@@ -524,9 +171,9 @@ Returns lists of available batters and pitchers.
 
 ### POST /predict
 
-Predicts hit probability for a pitch scenario.
+Calculates hit probability for a pitch scenario incorporating physics, sequence, and count context.
 
-**Request Body**:
+Request Body:
 ```json
 {
   "batter": "Aaron Judge",
@@ -542,188 +189,107 @@ Predicts hit probability for a pitch scenario.
     "outs_when_up": 1,
     "pfx_x": 0.5,
     "pfx_z": 1.2,
-    ...
+    "prev_pitch_type": "SL",
+    "prev_release_speed": 88.0,
+    "prev_plate_x": -0.4,
+    "prev_plate_z": 1.8,
+    "pitch_number": 3
   }
 }
 ```
 
-**Response**:
+Response:
 ```json
 {
   "probability": 0.285,
   "batter": "Aaron Judge",
   "pitcher": "Gerrit Cole",
-  "zone": 5
+  "pitch_type": "FF"
 }
 ```
 
 ---
 
-### GET /pitch-profile
+### GET /player-stats
 
-Returns average pitch characteristics for a pitcher's pitch type.
+Returns statistics and pitch repertoire percentages for a batter or pitcher.
 
-**Query Parameters**:
-- `pitcher` - Pitcher name
-- `pitch_type` - Pitch type code (FF, SL, CH, etc.)
+Query Parameters:
+- `player`: Player name (e.g. "Gerrit Cole")
+- `type`: Player type (`pitcher` or `batter`)
 
-**Response**:
+Response:
 ```json
 {
-  "profile": {
-    "release_speed": 96.8,
-    "release_spin_rate": 2350,
-    "pfx_x": 0.6,
-    "pfx_z": 1.1,
-    "arm_angle": 28.5,
-    ...
-  }
+  "player": "Gerrit Cole",
+  "type": "pitcher",
+  "stats": { "FIP": 3.42, "ERA": 3.41, "K/9": 9.6, "SwStr%": 0.124 },
+  "repertoire": { "FF": 54.2, "SL": 24.1, "KC": 11.5, "CH": 10.2 }
 }
 ```
 
 ---
 
-### GET /stats/pitcher
+### GET /stats/matchup-at-bats
 
-Returns historical pitch data for a pitcher.
+Returns historical at-bats for a pitcher-batter pairing.
 
-**Query Parameters**:
-- `name` - Pitcher name (e.g., "Gerrit Cole")
+Query Parameters:
+- `pitcher_id`: MLBAM Pitcher ID (e.g. `543037`)
+- `batter_id`: MLBAM Batter ID (e.g. `646240`)
 
-**Response**:
+Response:
 ```json
 [
   {
-    "pitch_type": "FF",
-    "game_date": "2024-09-15",
-    "release_speed": 97.2,
-    "plate_x": 0.3,
-    "plate_z": 2.8,
-    "events": "strikeout",
-    "zone": 5,
-    ...
-  },
-  ...
+    "game_date": "2024-06-08",
+    "inning": 3,
+    "outs_when_up": 1,
+    "pitch_count": 5,
+    "final_event": "home_run"
+  }
 ]
 ```
 
 ---
 
+### GET /stats/at-bat-pitches
+
+Returns chronological pitch records for a specific matchup at-bat.
+
+Query Parameters:
+- `pitcher_id`: MLBAM Pitcher ID
+- `batter_id`: MLBAM Batter ID
+- `game_date`: Date string in `YYYY-MM-DD` format
+- `inning`: Inning number
+- `outs_when_up`: Outs count
+
+---
+
+### GET /stats/pitcher
+
+Returns historical pitch data for a pitcher by name or ID.
+
+Query Parameters:
+- `name`: Pitcher name (e.g. "Gerrit Cole")
+- `id`: Optional MLBAM Pitcher ID
+
+---
+
 ## Troubleshooting
 
-### Issue: "Failed to connect to backend"
+### Connection failures to backend service
 
-**Cause**: Backend not running or wrong port
-
-**Solution**:
+Check if the Flask server is running on port 5001 or inspect Docker container status:
 ```bash
-# Check if backend is running
 docker-compose ps
-
-# Restart backend
-docker-compose restart backend
-
-# Check logs
 docker-compose logs backend
 ```
 
----
+### Unmatched pitcher records in database queries
 
-### Issue: "No data returned for pitcher"
+The database stores player names in `Last, First` format while the API interface converts query inputs to `First Last`. Ensure name parameters match roster key formats specified in `db.py`.
 
-**Cause**: Pitcher name doesn't match database format
+### Model prediction mismatch across feature versions
 
-**Solution**:
-- Database stores: "Last, First" format
-- UI expects: "First Last" format
-- Check [db.py](backend/db.py) `query_pitcher_pitches()` for name conversion logic
-
----
-
-### Issue: "Model predictions are all the same"
-
-**Cause**: Model not properly loaded or features mismatched
-
-**Solution**:
-1. Check artifact files exist in `backend/artifacts/`
-2. Verify model was trained with current feature set
-3. Re-run pipeline: `python backend/pipeline.py`
-
----
-
-### Issue: "Batter stances showing pitchers"
-
-**Cause**: Old batter_stances.json with wrong data
-
-**Solution**:
-```bash
-# Delete old file
-rm backend/artifacts/batter_stances.json
-
-# Re-run pipeline
-python backend/pipeline.py
-```
-
----
-
-### Issue: "Docker build fails"
-
-**Cause**: Missing dependencies or cache issues
-
-**Solution**:
-```bash
-# Clear Docker cache and rebuild
-docker-compose down
-docker-compose build --no-cache
-docker-compose up
-```
-
----
-
-## Best Practices
-
-1. **Version Control**: Always commit working code before making major changes
-2. **Testing**: Test changes locally before deploying
-3. **Logging**: Use `logger.info()` for important events, `logger.error()` for errors
-4. **Documentation**: Update this guide when adding features
-5. **Data Validation**: Always validate user input in API endpoints
-6. **Error Handling**: Use try/except blocks in Python, check for null/undefined in JS
-7. **Performance**: Cache expensive operations, use database indexes
-8. **Security**: Never commit API keys or credentials
-
----
-
-## Development Workflow
-
-```bash
-# 1. Make changes to code
-vim backend/app.py
-
-# 2. Test locally (if not using Docker)
-cd backend
-python app.py
-
-# 3. Rebuild and restart containers
-docker-compose up --build
-
-# 4. Test in browser
-open http://localhost
-
-# 5. Commit changes
-git add .
-git commit -m "Add feature X"
-git push
-```
-
----
-
-## Additional Resources
-
-- [LightGBM Documentation](https://lightgbm.readthedocs.io/)
-- [Flask Documentation](https://flask.palletsprojects.com/)
-- [D3.js Documentation](https://d3js.org/)
-- [pybaseball Documentation](https://github.com/jldbc/pybaseball)
-- [MLB Statcast Search](https://baseballsavant.mlb.com/statcast_search)
-- [Fangraphs](https://www.fangraphs.com/)
-
----
+When adding features to `engineer_features()` in `pipeline.py`, update `predict()` in `model.py` so the feature vector order matches the trained LightGBM feature names. Re-run `python backend/pipeline.py` to regenerate `lgbm_model.pkl`.

@@ -131,7 +131,7 @@ dev-setup: install
 # Quick start (for first-time setup)
 quickstart: dev-setup train build up
 	@echo ""
-	@echo "🎉 Mapping Heat is ready!"
+	@echo "Mapping Heat is ready."
 	@echo "Open http://localhost in your browser"
 
 # Backup artifacts

@@ -13,8 +13,32 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 DB_PATH = '/app/instance/mapping_heat.sqlite'
+if not os.path.exists('/app'):
+    DB_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), 'instance', 'mapping_heat.sqlite'))
+
 SCHEMA_PATH = '/app/schema.sql'
+if not os.path.exists('/app'):
+    SCHEMA_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), 'schema.sql'))
+
 ARTIFACTS_DIR = '/app/artifacts'
+if not os.path.exists('/app'):
+    ARTIFACTS_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), 'artifacts'))
+
+
+import unicodedata
+
+def normalize_name(text):
+    if not text:
+        return ""
+    # Strip accents
+    normalized = ''.join(c for c in unicodedata.normalize('NFD', text)
+                        if unicodedata.category(c) != 'Mn')
+    # Strip dots to handle initials (e.g. A.J. Blubaugh -> AJ Blubaugh)
+    normalized = normalized.replace('.', '')
+    # Split, lowercase, sort alphabetically, and join
+    words = sorted([w.strip().lower() for w in normalized.replace(',', ' ').split() if w.strip()])
+    return ''.join(words)
+
 
 
 def get_db_connection():
@@ -22,46 +46,37 @@ def get_db_connection():
     os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
     
     conn = sqlite3.connect(DB_PATH)
+    conn.create_function("NORMALIZE", 1, normalize_name)
     conn.row_factory = sqlite3.Row
     return conn
 
 
 def init_db():
     """Initialize database with schema and load pitch data from CSV."""
-    logger.info("=" * 60)
-    logger.info("Initializing Database")
-    logger.info("=" * 60)
-    
-    # Create schema
-    logger.info(f"Creating database at: {DB_PATH}")
+    logger.info(f"Initializing database at {DB_PATH}")
     conn = get_db_connection()
     
     try:
-        # Execute schema
-        logger.info(f"Loading schema from: {SCHEMA_PATH}")
         with open(SCHEMA_PATH, 'r') as f:
             conn.executescript(f.read())
-        logger.info("✓ Database schema created")
+        logger.info("Database schema created")
         
-        # Find pitch data CSV
         csv_pattern = os.path.join(ARTIFACTS_DIR, 'pitching_data_*.csv')
         csv_files = glob.glob(csv_pattern)
         
         if not csv_files:
-            logger.warning(f"⚠ No pitch data CSV found at {csv_pattern}")
-            logger.warning("  Database will be empty. Run pipeline.py to generate data.")
+            logger.warning(f"No pitch data CSV found at {csv_pattern}")
+            logger.warning("Database will be empty. Run pipeline.py to generate data.")
             conn.close()
             return
         
-        # Use most recent CSV
-        csv_file = sorted(csv_files)[-1]
-        logger.info(f"Loading pitch data from: {csv_file}")
+        # Use the CSV with the largest size (most comprehensive dataset)
+        csv_file = max(csv_files, key=os.path.getsize)
+        logger.info(f"Loading pitch data from {csv_file}")
         
-        # Load CSV into database
         df = pd.read_csv(csv_file, low_memory=False)
-        logger.info(f"  Loaded {len(df):,} pitches from CSV")
+        logger.info(f"Loaded {len(df):,} pitches from CSV")
         
-        # Select only the columns we need (matching schema)
         required_cols = [
             'pitch_type', 'game_date', 'release_speed', 'release_pos_x', 'release_pos_z',
             'player_name', 'batter', 'pitcher', 'events', 'description', 'zone',
@@ -71,47 +86,32 @@ def init_db():
             'spin_axis', 'arm_angle', 'n_thruorder_pitcher'
         ]
         
-        # Keep only available columns
         available_cols = [col for col in required_cols if col in df.columns]
         df_filtered = df[available_cols]
         
-        logger.info(f"  Writing to database...")
+        logger.info("Writing pitches to database")
         df_filtered.to_sql('pitching_data', conn, if_exists='replace', index=False)
         
-        # Verify
         count = conn.execute("SELECT COUNT(*) FROM pitching_data").fetchone()[0]
-        logger.info(f"✓ Database loaded with {count:,} pitches")
+        logger.info(f"Database loaded with {count:,} pitches")
         
-        # Get pitcher count
         pitcher_count = conn.execute("SELECT COUNT(DISTINCT player_name) FROM pitching_data").fetchone()[0]
-        logger.info(f"✓ Found {pitcher_count} unique pitchers")
+        logger.info(f"Found {pitcher_count} unique pitchers")
         
     except Exception as e:
-        logger.error(f"✗ Database initialization failed: {e}")
+        logger.error(f"Database initialization failed: {e}")
         raise
     finally:
         conn.close()
-    
-    logger.info("=" * 60)
-    logger.info("✓ Database Ready!")
-    logger.info("=" * 60)
 
 
 def query_pitcher_pitches(pitcher_name: str):
     """Query all pitches for a specific pitcher."""
     conn = get_db_connection()
     try:
-        # Convert "First Last" to "Last, First" format for database query
-        # Database stores names as "Last, First" but UI uses "First Last"
-        name_parts = pitcher_name.strip().split(' ', 1)
-        if len(name_parts) == 2:
-            db_name = f"{name_parts[1]}, {name_parts[0]}"
-        else:
-            db_name = pitcher_name
-
         cursor = conn.execute(
-            "SELECT * FROM pitching_data WHERE player_name = ? ORDER BY game_date DESC",
-            (db_name,)
+            "SELECT * FROM pitching_data WHERE NORMALIZE(player_name) = NORMALIZE(?) ORDER BY game_date DESC",
+            (pitcher_name,)
         )
         pitches = [dict(row) for row in cursor.fetchall()]
         return pitches
@@ -154,5 +154,19 @@ def query_batter_stances():
                 stances[batter_name] = stance
 
         return stances
+    finally:
+        conn.close()
+
+
+def query_pitcher_pitches_by_id(pitcher_id: int):
+    """Query all pitches for a specific pitcher by their MLBAM ID."""
+    conn = get_db_connection()
+    try:
+        cursor = conn.execute(
+            "SELECT * FROM pitching_data WHERE CAST(pitcher AS INTEGER) = ? ORDER BY game_date DESC",
+            (pitcher_id,)
+        )
+        pitches = [dict(row) for row in cursor.fetchall()]
+        return pitches
     finally:
         conn.close()

@@ -25,37 +25,49 @@ MANIFEST
 venv/
 env/
 ENV/
-.venv
+.venv/
 
-# IDEs
+# IDEs and local tooling
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
 .DS_Store
+.agents/
+.claude/
 
 # Jupyter Notebooks
-.ipynb_checkpoints
+.ipynb_checkpoints/
 *.ipynb
 
-# Model artifacts (comment out if you want to track them)
+# Model artifacts and data
 backend/artifacts/*.pkl
-backend/artifacts/*.json
-
-# Data cache
-.pybaseball_cache/
+backend/artifacts/*.csv
+backend/artifacts/*.parquet
 backend/cache/
+.pybaseball_cache/
+artifacts/
+cache/
 *.csv
 *.parquet
+
+# Database files
+backend/instance/
+instance/
+*.sqlite
+*.sqlite3
+*.db
+
+# Temporary and development notes
+MODEL_*.md
+screenshots/
+pitch_v1.html
 
 # Logs
 *.log
 logs/
 *.out
-
-# Docker
-.dockerignore
 
 # Environment variables
 .env
@@ -66,12 +78,10 @@ logs/
 .coverage
 htmlcov/
 
-# MacOS
+# Operating system files
 .DS_Store
 .AppleDouble
 .LSOverride
-
-# Windows
 Thumbs.db
 ehthumbs.db
 Desktop.ini
@@ -79,6 +89,5 @@ Desktop.ini
 # Temporary files
 *.tmp
 *.bak
-*.swp
 tmp/
 temp/
